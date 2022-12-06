@@ -11,6 +11,13 @@ source install-eqquasi.sh
 cp bin/eqquasi ../../bin/
 cd .. # back to components
 
+cd components 
+git clone https://github.com/dunyuliu/EQdyna.git eqdyna
+cd eqdyna
+source install-eqdnya.sh
+cp bin/eqdyna ../../bin/
+cd .. # back to components
+
 git clone https://github.com/wangyf/sordw3 sord
 cd sord
 cd src
