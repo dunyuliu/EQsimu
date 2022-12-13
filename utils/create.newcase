@@ -1,0 +1,71 @@
+#! /usr/bin/env python3 
+
+import xml.etree.ElementTree as ET
+import shutil, sys, os
+
+def case_copy(src, dst):
+    # copy files from src to dst
+    filenames = os.listdir(src)
+    for f in filenames:
+        srcf = src + '/' + f
+        shutil.copy(srcf, dst)
+
+def _main_func(description):
+
+    print("create.newcase takes in three parameters.")
+    print("1. code selection - fdc, qdc, dr.")
+    print("   fdc: fully dynamic cycle with EQquasi+EQdyna ...")
+    print("   qdc: quasi dynamic cycle with EQquasi ...")
+    print("   dr : dynamic rupture with EQdyna ...")
+    print("2. path for case run directory.")
+    print("3. compset.")
+    
+    code_sel  = sys.argv[1]
+    case_path = sys.argv[2]
+    compset   = sys.argv[3]
+
+    print(code_sel + ' mode is selected ...')
+    print('case run directory ' + case_path + 'is created ...')
+    print('compset ' + compset + ' is selected ...')
+
+    env_var = os.environ
+
+    shutil.rmtree(str(case_path), ignore_errors=True)
+    os.mkdir(str(case_path))
+    
+    if code_sel == 'qdc':
+      root = env_var['ECCIROOT']
+      input_path = root + '/components/eqquasi/case_input/' + str(compset) 
+      utils_path = root + '/components/eqquasi/scripts'
+      case_copy(input_path, case_path)
+      case_copy(utils_path, case_path)
+    elif code_sel == "dr":
+      root = env_var['ECCIROOT']
+      input_path = root + '/components/eqdyna/case_input/' + str(compset) 
+      utils_path = root + '/components/eqdyna/scripts'
+      case_copy(input_path, case_path)
+      case_copy(utils_path, case_path)
+    elif code_sel == "fdc":
+      case_path1 = case_path + '/eqquasi'
+      case_path2 = case_path + '/eqdyna'
+      os.mkdir(str(case_path1))
+      os.mkdir(str(case_path2))
+
+      root = env_var['ECCIROOT']
+      
+      utils_path0 = root + '/utils'
+
+      input_path1 = root + '/components/eqquasi/case_input/' + str(compset) 
+      utils_path1 = root + '/components/eqquasi/scripts'
+      
+      input_path2 = root + '/components/eqdyna/case_input/' + str(compset) 
+      utils_path2 = root + '/components/eqdyna/scripts'
+      
+      case_copy(input_path1, case_path1)
+      case_copy(utils_path2, case_path2)
+
+      case_copy(utils_path0, case_path)
+
+if __name__ == "__main__":
+    _main_func(__doc__)
+
