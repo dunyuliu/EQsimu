@@ -62,8 +62,11 @@ def _main_func(description):
       utils_path2 = root + '/components/eqdyna/scripts'
       
       case_copy(input_path1, case_path1)
-      case_copy(utils_path2, case_path2)
+      case_copy(utils_path1, case_path1)
 
+      case_copy(input_path2, case_path2)
+      case_copy(utils_path2, case_path2)
+  
       case_copy(utils_path0, case_path)
 
 if __name__ == "__main__":
