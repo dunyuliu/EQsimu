@@ -10,8 +10,8 @@ def _main_func(description):
     f.write(str(istart))
   # Only create currentcycle.txt at the start of job submission.
   # In later cycles, batch.cycle.hpc in ./eqquasi and ./eqdyna will increase the cycle id by 1 after each successful run. 
-  os.system("./eqquasi/case.setup")
-  os.system("./eqdyna/case.setup")
+  os.system("cd eqquasi && ./case.setup && cd ..")
+  os.system("cd eqdyna  && ./case.setup && cd ..")
   
   os.system("cp currentcycle.txt ./eqquasi")
   os.system("cp currentcycle.txt ./eqdyna")
