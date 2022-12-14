@@ -1,0 +1,29 @@
+#! /usr/bin/env python3
+"""
+Script to launch batch job for EQquasi.
+"""
+import os
+from user_defined_params import *
+
+def _main_func(description): 
+  with open("currentcycle.txt", "w") as f:
+    f.write(str(istart))
+  # Only create currentcycle.txt at the start of job submission.
+  # In later cycles, batch.cycle.hpc in ./eqquasi and ./eqdyna will increase the cycle id by 1 after each successful run. 
+  os.system("./eqquasi/case.setup")
+  os.system("./eqdyna/case.setup")
+  
+  os.system("cp currentcycle.txt ./eqquasi")
+  os.system("cp currentcycle.txt ./eqdyna")
+  os.system("jobid = $(sbatch ./eqquasi/batch.cycle.hpc)")
+  print("Job of cycle "+str(istart)+ " submitted ...")
+  
+  for cid in range(istart,iend-1):
+    os.system("jobid = $(sbatch --dependency=afterok:$jobid ./eqdyna/batch.cycle.hpc)")
+    os.system("jobid = $(sbatch --dependency=afterok:$jobid ./eqquasi/batch.cycle.hpc)")
+    print("Job of cycle "+ str(cid+1)+ " submitted ...")
+  
+  os.system("jobid = $(sbatch --dependency=afterok:$jobid ./eqdyna/batch.cycle.hpc)")
+
+if __name__ == "__main__":
+    _main_func(__doc__)
