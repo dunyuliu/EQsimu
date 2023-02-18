@@ -1,8 +1,8 @@
 # /usr/bin/bash 
 
 # check out EQquasi as the interseis component
-export ECCIROOT=$(pwd)
-echo   $ECCIROOT
+export ESCIROOT=$(pwd)
+echo   $ESCIROOT
 
 rm -rf components bin
 
