@@ -34,13 +34,13 @@ def _main_func(description):
     os.mkdir(str(case_path))
     
     if code_sel == 'qdc':
-      root = env_var['ECCIROOT']
+      root = env_var['ESCIROOT']
       input_path = root + '/components/eqquasi/case_input/' + str(compset) 
       utils_path = root + '/components/eqquasi/scripts'
       case_copy(input_path, case_path)
       case_copy(utils_path, case_path)
     elif code_sel == "dr":
-      root = env_var['ECCIROOT']
+      root = env_var['ESCIROOT']
       input_path = root + '/components/eqdyna/case_input/' + str(compset) 
       utils_path = root + '/components/eqdyna/scripts'
       case_copy(input_path, case_path)
@@ -51,7 +51,7 @@ def _main_func(description):
       os.mkdir(str(case_path1))
       os.mkdir(str(case_path2))
 
-      root = env_var['ECCIROOT']
+      root = env_var['ESCIROOT']
       
       utils_path0 = root + '/utils'
 
