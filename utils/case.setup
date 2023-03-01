@@ -1,0 +1,75 @@
+#! /usr/bin/env python3
+"""
+Script to prepare the case for cycles.
+It loads user_defined_params.py, which defines the starting and ending IDs of earthquake cycle queue.
+"""
+import os
+from user_defined_params import *
+
+def prepare_eqdyna():
+  # prepare_eqdyna will run case.setup in the dir eqdyna and move relevant files to the root directory of this case.
+  os.system("cd eqdyna && ./case.setup && cd ..")
+  # copy and paste relevant files from /eqdyna to the case root directory.
+  # put these cp commands in batch.cycle.hpc.
+  os.system("cp -r eqdyna/batch.cycle.eqdyna.hpc ./")
+  #os.system("cp -r eqdyna/bFaultGeometry.txt ./")
+  #os.system("cp -r eqdyna/bGlobal.txt ./")
+  #os.system("cp -r eqdyna/bMaterial.txt ./")
+  #os.system("cp -r eqdyna/bModelGeometry.txt ./")
+  #os.system("cp -r eqdyna/bStations.txt ./")
+  # still need on_fault_vars_input.nc. But it has the same name as that in eqquasi. Need to change. 
+  
+def prepare_eqquasi():
+  # prepare_eqquasi will run case.setup in the dir eqquasi and move relevant files to the root directory of this case.
+  os.system("cd eqquasi && ./case.setup && cd ..")
+  # copy and paste relevant files from /eqquasi to the case root directory.
+  os.system("cp -r eqquasi/batch.cycle.eqquasi.hpc ./")
+  #os.system("cp -r eqquasi/model.txt ./")
+  #os.system("cp -r eqquasi/stations.txt ./")
+  #os.system("cp -r eqquasi/on_fault_vars_input.nc ./")
+
+def create_exe_shell():
+  with open("exe.sh","w") as f:
+    # loop over all the cycles required.
+    for cid in range(iend-istart):
+      if cid == 0:
+        f.write("jobid=$(sbatch batch.cycle.eqquasi.hpc)"  + "\n")
+      else:
+        f.write("jobid=$(sbatch --dependency=afterok:${jobid##* } batch.cycle.eqquasi.hpc)"  + "\n")
+      f.write("echo $jobid" + "\n")
+      f.write("jobid=$(sbatch --dependency=afterok:${jobid##* } batch.cycle.eqdyna.hpc)"  + "\n")
+      f.write("echo $jobid" + "\n")
+
+def create_exe_shell_old():
+  with open("exe.sh","w") as f:
+    # set up individual components.
+    f.write("cd eqquasi && ./case.setup && cd .."  + "\n")
+    f.write("cd eqdyna  && ./case.setup && cd .."  + "\n")
+  
+    f.write("cp currentcycle.txt ./eqquasi"  + "\n")
+    f.write("cp currentcycle.txt ./eqdyna"  + "\n")
+    
+    # run the 1st non-dynamic component.
+    f.write("cd eqquasi && jobid=$(sbatch batch.cycle.hpc) && cd .."  + "\n")  
+    f.write("echo $jobid" + "\n") # show job submission info.
+    # loop over all the cycles required.
+    for cid in range(iend-istart):
+        f.write("cd eqdyna  && jobid=$(sbatch --dependency=afterok:${jobid##* } batch.cycle.hpc) && cd .."  + "\n")
+        f.write("echo $jobid" + "\n")
+        f.write("cd eqquasi && jobid=$(sbatch --dependency=afterok:${jobid##* } batch.cycle.hpc) && cd .."  + "\n")
+        f.write("echo $jobid" + "\n")
+    # run the last dynamic component.
+    f.write("cd eqdyna && jobid=$(sbatch --dependency=afterok:${jobid##* } batch.cycle.hpc) && cd .."   + "\n")
+    f.write("echo $jobid" + "\n")
+
+def _main_func(description): 
+    with open("currentcycle.txt", "w") as f:
+        f.write(str(istart))
+    # Only create currentcycle.txt at the start of job submission.
+    # In later cycles, batch.cycle.hpc in ./eqdyna will increase the cycle id by 1 after each successful cycle. 
+    prepare_eqdyna()
+    prepare_eqquasi()
+    create_exe_shell()
+
+if __name__ == "__main__":
+    _main_func(__doc__)

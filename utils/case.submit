@@ -4,37 +4,8 @@ Script to launch a series of dependent batch job to HPC for cycles.
 It loads user_defined_params.py, which defines the starting and ending IDs of earthquake cycle queue.
 """
 import os
-from user_defined_params import *
-
-def create_exe_shell():
-  with open("exe.sh","w") as f:
-    # set up individual components.
-    f.write("cd eqquasi && ./case.setup && cd .."  + "\n")
-    f.write("cd eqdyna  && ./case.setup && cd .."  + "\n")
-  
-    f.write("cp currentcycle.txt ./eqquasi"  + "\n")
-    f.write("cp currentcycle.txt ./eqdyna"  + "\n")
-    
-    # run the 1st non-dynamic component.
-    f.write("cd eqquasi && jobid=$(sbatch batch.cycle.hpc) && cd .."  + "\n")  
-    f.write("echo $jobid" + "\n") # show job submission info.
-    # loop over all the cycles required.
-    for cid in range(iend-istart):
-        f.write("cd eqdyna  && jobid=$(sbatch --dependency=afterok:${jobid##* } batch.cycle.hpc) && cd .."  + "\n")
-        f.write("echo $jobid" + "\n")
-        f.write("cd eqquasi && jobid=$(sbatch --dependency=afterok:${jobid##* } batch.cycle.hpc) && cd .."  + "\n")
-        f.write("echo $jobid" + "\n")
-    # run the last dynamic component.
-    f.write("cd eqdyna && jobid=$(sbatch --dependency=afterok:${jobid##* } batch.cycle.hpc) && cd .."   + "\n")
-    f.write("echo $jobid" + "\n")
 
 def _main_func(description): 
-    with open("currentcycle.txt", "w") as f:
-        f.write(str(istart))
-    # Only create currentcycle.txt at the start of job submission.
-    # In later cycles, batch.cycle.hpc in ./eqquasi and ./eqdyna will increase the cycle id by 1 after each successful run. 
-  
-    create_exe_shell() # create the executable shell script. 
     os.system("source exe.sh") # run the script to submit dependent jobs.
 
 if __name__ == "__main__":
