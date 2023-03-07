@@ -31,7 +31,7 @@ def prepare_eqquasi():
 def create_exe_shell():
   with open("exe.sh","w") as f:
     # loop over all the cycles required.
-    for cid in range(iend-istart):
+    for cid in range(iend-istart+1):
       if cid == 0:
         f.write("jobid=$(sbatch batch.cycle.eqquasi.hpc)"  + "\n")
       else:
