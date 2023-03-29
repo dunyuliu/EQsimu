@@ -2,17 +2,19 @@
 
 # The shell script is to check out components contained in ESCI.
 # Currently, it has EQdyna, EQquasi, and SORD.
-
-echo "    Welcome to ESCI                                                 "
-echo "       Earthquake System Coupling Infrastructure                    "
-
-echo "    ESCI supports EQdyna, EQquasi, and SORD                         "
-echo "       on ls6 and ubuntu                                            " 
 echo "                                                                    "
-echo "    To checkout ESCI on a specific machine, please tpye             "
-echo "       git https://github.com/dunyuliu/ESCI.git                     "
-echo "       chmod 755 checkout.sh                                        "
-echo "       ./checkout -h                                                "
+echo "                                                                    "
+echo "                                                                    "
+echo "Welcome to ESCI                                                     "
+echo " -----Earthquake System Coupling Infrastructure                     "
+echo "                                                                    "
+echo "ESCI supports EQdyna, EQquasi, and SORD                             "
+echo " -----on ls6 and ubuntu                                             " 
+echo "                                                                    "
+echo "To checkout ESCI on a specific machine, please tpye                 "
+echo " -----git https://github.com/dunyuliu/ESCI.git                      "
+echo " -----chmod 755 checkout.sh                                         "
+echo " -----./checkout -h                                                 "
 echo "                                                                    "
 echo "                                                                    "
 echo "                                                                    "
