@@ -4,7 +4,8 @@
 # Currently, it has EQdyna, EQquasi, and SORD.
 
 echo "    Welcome to ESCI                                                 "
-echo "                                                                    "
+echo "       Earthquake System Coupling Infrastructure                    "
+
 echo "    ESCI supports EQdyna, EQquasi, and SORD                         "
 echo "       on ls6 and ubuntu                                            " 
 echo "                                                                    "
@@ -31,8 +32,8 @@ export ESCIROOT=$(pwd)
 export EQDYNAROOT=$(pwd)/components/eqdyna
 export EQQYASIROOT=$(pwd)/components/eqquasi
 export PATH=$(pwd)/bin:$PATH
-echo ESCIROOT
-echo PATH
+#echo ESCIROOT
+#echo PATH
 
 while getopts "hi:u:" OPTION; do
     case $OPTION in
