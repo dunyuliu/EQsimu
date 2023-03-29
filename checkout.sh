@@ -13,7 +13,9 @@ echo "    To checkout ESCI on a specific machine, please tpye             "
 echo "       git https://github.com/dunyuliu/ESCI.git                     "
 echo "       chmod 755 checkout.sh                                        "
 echo "       ./checkout -h                                                "
-
+echo "                                                                    "
+echo "                                                                    "
+echo "                                                                    "
 # It will create folders /components that host src of different tools
 # and /bin to host executables.
 
