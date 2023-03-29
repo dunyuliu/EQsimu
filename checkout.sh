@@ -68,13 +68,17 @@ while getopts "hi:u:" OPTION; do
     esac
 done 
 
-if [ -n "$MATCH" ]; then 
+if [ -n "$MACH" ]; then 
     export MACHINE=$MACH
     
-    echo "Installing ESCI on Lonestar6 at TACC ... ..."
-    rm -rf components bin
-    mkdir components
-    mkdir bin
+    echo "Installing ESCI on " $MACHINE " ... ..."
+    
+    if [ $UPDATE = "False" ]; then 
+        rm -rf components bin
+        mkdir components
+        mkdir bin
+    fi
+    
     cd components 
     #1 download/update and install EQquasi
     if [ $UPDATE = "False" ]; then 
