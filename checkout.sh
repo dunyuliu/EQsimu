@@ -3,15 +3,15 @@
 # The shell script is to check out components contained in ESCI.
 # Currently, it has EQdyna, EQquasi, and SORD.
 
-echo " ==================   Welcome to ESCI  ======================="
-echo " =    Currently ESCI supports EQdyna, EQquasi, and SORD      ="
-echo " =    It supports ls6 and ubuntu                             =" 
-echo " =    To checkout ESCI on a specific machine, please tpye    ="
-echo " =        git https://github.com/dunyuliu/ESCI.git           ="
-echo " =        chmod 755 checkout.sh                              ="
-echo " =        ./checkout -m ls6                                  ="
-echo " =                                                           ="
-echo " =    INSTALLING ... ...                                     ="
+echo "    Welcome to ESCI                                                 "
+echo "                                                                    "
+echo "    ESCI supports EQdyna, EQquasi, and SORD                         "
+echo "       on ls6 and ubuntu                                            " 
+echo "                                                                    "
+echo "    To checkout ESCI on a specific machine, please tpye             "
+echo "       git https://github.com/dunyuliu/ESCI.git                     "
+echo "       chmod 755 checkout.sh                                        "
+echo "       ./checkout -h                                                "
 
 # It will create folders /components that host src of different tools
 # and /bin to host executables.
@@ -21,11 +21,11 @@ echo " =    INSTALLING ... ...                                     ="
 #	ubuntu: Ubuntu 22.04
 
 # setting up environment variables 
-echo " =                                                           ="
-echo " =    To set up environment variables                        ="
-echo " =        ESCIROOT, EQQUASIROOT, EQDYNAROOT                  ="
-echo " =    and adding executables to PATH                         ="
-echo " =    Please 'source checkout.sh'                            ="
+#echo " =                                                           ="
+#echo " =    To set up environment variables                        ="
+#echo " =        ESCIROOT, EQQUASIROOT, EQDYNAROOT                  ="
+#echo " =    and adding executables to PATH                         ="
+#echo " =    Please 'source checkout.sh'                            ="
 
 export ESCIROOT=$(pwd)
 export EQDYNAROOT=$(pwd)/components/eqdyna
@@ -45,7 +45,7 @@ while getopts "hi:u:" OPTION; do
             UPDATE="True"
             ;;
         h)
-            echo "Usage: ./checkout.sh [-h] [-i Machine_name] [-u Machine_name] "
+            echo "Usage: ./checkout.sh [-h] [-i Machine_name] [-u Machine_name]        "
             echo "                                                                     "
             echo "Examples:                                                            "
             echo "                                                                     "
