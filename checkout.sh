@@ -35,7 +35,7 @@ echo "                                                                    "
 export ESCIROOT=$(pwd)
 export EQDYNAROOT=$(pwd)/components/eqdyna
 export EQQYASIROOT=$(pwd)/components/eqquasi
-export PATH=$(pwd)/bin:$PATH
+export PATH=$(pwd)/bin:$(pwd)/utils:$PATH
 #echo ESCIROOT
 #echo PATH
 
