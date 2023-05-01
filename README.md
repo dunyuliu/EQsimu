@@ -1,4 +1,4 @@
-# ESCI
+# EQsimu
 ## Earthquake System Coupling Infrastructure. 
 The repository hosts python and shell utilities to shuttle, install, and use codes included in the ESCI. <br/>
 
