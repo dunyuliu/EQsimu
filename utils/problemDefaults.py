@@ -12,12 +12,26 @@ class problem:
     istart, iend = 1, 1      # cycle ids to run (EQquasi)
 
     # Fault: vertical strike-slip, in the xz plane (y = 0), m.
+    # ntotft == 1 (default): fxmin/fxmax/fzmin/fzmax are that one fault's
+    # box directly, and leave faultgeom None.
+    # ntotft > 1 (stepover): leave fxmin/fxmax/fzmin/fzmax None and instead
+    # set faultgeom to a list of ntotft (fxmin, fxmax, ycoor, fzmin, fzmax)
+    # tuples, m, one per fault (EQquasi's own on-disk convention). convert.py
+    # derives fxmin/fxmax/fzmin/fzmax from it (fault 1's own box, which is
+    # what EQdyna's legacy single-fault fields need) and EQquasi's own union
+    # box, and checks every fault bound and the y stepover offset lands on a
+    # whole-dx grid node from the union origin -- both codes' mesh
+    # generators assume this. Roughness is not supported at ntotft > 1
+    # (EQdyna refuses rough input combined with multiple faults): the
+    # problem's fault must be planar.
     fxmin, fxmax = None, None
     fzmin, fzmax = None, None
+    faultgeom = None
     dx = None                # on-fault grid spacing, m
     ntotft = 1
     roughness = None         # fault surface, see utils/roughness.py;
-                             # None means a planar fault
+                             # None means a planar fault (required if
+                             # ntotft > 1)
 
     # Elastic material.
     vp, vs, rou = None, None, None
@@ -43,4 +57,7 @@ class problem:
 
     # fault(p, x, z) -> dict of on-fault initial values at (x, z), with keys
     # a, b, Dc, v0, f0, vini, tnrm, tstk, state. p holds the fields above.
+    # ntotft > 1: fault may instead take a 4th argument, fault(p, x, z, ift),
+    # the 0-based fault index, for per-fault physics; convert.py detects the
+    # arity and calls accordingly.
     fault = None
