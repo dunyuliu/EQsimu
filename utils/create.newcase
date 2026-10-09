@@ -1,74 +1,85 @@
-#! /usr/bin/env python3 
+#! /usr/bin/env python3
+"""
+create.newcase MODE CASE COMPSET
 
-import xml.etree.ElementTree as ET
-import shutil, sys, os
+Convert the EQsimu compset COMPSET (compset/COMPSET/user_defined_params.py)
+into each code's user_defined_params.py, then stage the case with the code's
+own create.newcase.
 
-def case_copy(src, dst):
-    # copy files from src to dst
-    filenames = os.listdir(src)
-    for f in filenames:
-        srcf = src + '/' + f
-        shutil.copy(srcf, dst)
+  qdc  quasi-dynamic cycle, EQquasi        CASE is an EQquasi case
+  dr   dynamic rupture, EQdyna             CASE is an EQdyna case
+  fdc  fully dynamic cycle, EQquasi+EQdyna CASE holds eqquasi/ and eqdyna/
 
-def _main_func(description):
+For a code's own compsets, use that code's create.newcase directly.
+"""
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
 
-    print("create.newcase takes in three parameters.")
-    print("1. code selection - fdc, qdc, dr.")
-    print("   fdc: fully dynamic cycle with EQquasi+EQdyna ...")
-    print("   qdc: quasi dynamic cycle with EQquasi ...")
-    print("   dr : dynamic rupture with EQdyna ...")
-    print("2. path for case run directory.")
-    print("3. compset.")
-    
-    code_sel  = sys.argv[1]
-    case_path = sys.argv[2]
-    compset   = sys.argv[3]
+import convert
 
-    print(code_sel + ' mode is selected ...')
-    print('case run directory ' + case_path + 'is created ...')
-    print('compset ' + compset + ' is selected ...')
+CODES = {"qdc": ["eqquasi"], "dr": ["eqdyna"], "fdc": ["eqquasi", "eqdyna"]}
+UTILS = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(UTILS)
 
-    env_var = os.environ
 
-    shutil.rmtree(str(case_path), ignore_errors=True)
-    os.mkdir(str(case_path))
-    
-    if code_sel == 'qdc':
-      root = env_var['ESCIROOT']
-      input_path = root + '/components/eqquasi/case_input/' + str(compset) 
-      utils_path = root + '/components/eqquasi/scripts'
-      case_copy(input_path, case_path)
-      case_copy(utils_path, case_path)
-    elif code_sel == "dr":
-      root = env_var['ESCIROOT']
-      input_path = root + '/components/eqdyna/case_input/' + str(compset) 
-      utils_path = root + '/components/eqdyna/scripts'
-      case_copy(input_path, case_path)
-      case_copy(utils_path, case_path)
-    elif code_sel == "fdc":
-      case_path1 = case_path + '/eqquasi'
-      case_path2 = case_path + '/eqdyna'
-      os.mkdir(str(case_path1))
-      os.mkdir(str(case_path2))
+def stage(code, compset_dir, case_dir, gen_dir):
+    """Generate code's compset in gen_dir and stage case_dir from it."""
+    convert.write_code_compset(compset_dir, code, gen_dir)
+    tool = os.path.join(os.environ[convert.ROOT_ENV[code]], "scripts",
+                        "create.newcase")
+    subprocess.run([sys.executable, tool, case_dir,
+                    convert.upstream_compset_arg(code, gen_dir)], check=True)
 
-      root = env_var['ESCIROOT']
-      
-      utils_path0 = root + '/utils'
 
-      input_path1 = root + '/components/eqquasi/case_input/' + str(compset) 
-      utils_path1 = root + '/components/eqquasi/scripts'
-      
-      input_path2 = root + '/components/eqdyna/case_input/' + str(compset) 
-      utils_path2 = root + '/components/eqdyna/scripts'
-      
-      case_copy(input_path1, case_path1)
-      case_copy(utils_path1, case_path1)
+def record(case_dir, compset_dir, gen):
+    """case/eqsimu/: the problem, the generated files, the component commits."""
+    dst = os.path.join(case_dir, "eqsimu")
+    shutil.copytree(compset_dir, os.path.join(dst, "compset"))
+    for code, d in gen.items():
+        shutil.copytree(d, os.path.join(dst, code))
+    with open(os.path.join(dst, "components.txt"), "w") as f:
+        for name, var in [("eqsimu", "EQSIMUROOT")] + \
+                [(c, convert.ROOT_ENV[c]) for c in gen]:
+            sha = subprocess.run(["git", "-C", os.environ[var], "rev-parse",
+                                  "HEAD"], capture_output=True, text=True,
+                                 check=True).stdout.strip()
+            f.write(f"{name} {sha}\n")
 
-      case_copy(input_path2, case_path2)
-      case_copy(utils_path2, case_path2)
-  
-      case_copy(utils_path0, case_path)
+
+def main():
+    if len(sys.argv) != 4 or sys.argv[1] not in CODES:
+        sys.exit(__doc__)
+    mode, case_dir, compset = sys.argv[1:]
+    compset_dir = os.path.join(ROOT, "compset", compset)
+    if not os.path.isdir(compset_dir):
+        sys.exit(f"create.newcase: no EQsimu compset {compset} in "
+                 f"{os.path.join(ROOT, 'compset')}")
+    if os.path.exists(case_dir):
+        sys.exit(f"create.newcase: {case_dir} exists; remove it first")
+    case_dir = os.path.abspath(case_dir)
+
+    with tempfile.TemporaryDirectory() as tmp:
+        gen = {c: os.path.join(tmp, c) for c in CODES[mode]}
+        if mode == "fdc":
+            os.makedirs(case_dir)
+            for code in gen:
+                stage(code, compset_dir, os.path.join(case_dir, code), gen[code])
+            for f in ["case.setup", "case.submit", "problemDefaults.py"]:
+                shutil.copy(os.path.join(UTILS, f), case_dir)
+            shutil.copy(os.path.join(compset_dir, "user_defined_params.py"),
+                        case_dir)
+        else:
+            (code,) = gen
+            stage(code, compset_dir, case_dir, gen[code])
+        record(case_dir, compset_dir, gen)
+    print(f"{mode} case {case_dir} from compset {compset}")
+
 
 if __name__ == "__main__":
-    _main_func(__doc__)
-
+    try:
+        main()
+    except convert.ConvertError as e:
+        sys.exit(f"create.newcase: {e}")

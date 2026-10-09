@@ -1,126 +1,59 @@
-# /bin/bash 
+#!/bin/bash
+# EQsimu: check out EQquasi and EQdyna at the commits pinned in
+# components.txt, build them with their own install scripts, and set the
+# environment.
+#
+#   ./checkout.sh -i <mach>   clone + build into components/   (ls6, ubuntu, ...)
+#   ./checkout.sh -u <mach>   move existing checkouts to the pins + rebuild
+#   source checkout.sh        set EQSIMUROOT, EQQUASIROOT, EQDYNAROOT, PATH
+#
+# <mach> is passed straight to each component's install script (-m <mach>).
 
-# The shell script is to check out components contained in ESCI.
-# Currently, it has EQdyna, EQquasi, and SORD.
-echo "                                                                    "
-echo "                                                                    "
-echo "                                                                    "
-echo "Welcome to ESCI                                                     "
-echo " -----Earthquake System Coupling Infrastructure                     "
-echo "                                                                    "
-echo "ESCI supports EQdyna, EQquasi, and SORD                             "
-echo " -----on ls6 and ubuntu                                             " 
-echo "                                                                    "
-echo "To checkout ESCI on a specific machine, please tpye                 "
-echo " -----git https://github.com/dunyuliu/ESCI.git                      "
-echo " -----chmod 755 checkout.sh                                         "
-echo " -----./checkout -h                                                 "
-echo "                                                                    "
-echo "                                                                    "
-echo "                                                                    "
-# It will create folders /components that host src of different tools
-# and /bin to host executables.
+EQSIMUROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+export EQSIMUROOT
+export EQQUASIROOT=$EQSIMUROOT/components/eqquasi
+export EQDYNAROOT=$EQSIMUROOT/components/eqdyna
+export PATH=$EQSIMUROOT/utils:$EQQUASIROOT/bin:$EQQUASIROOT/scripts:$EQDYNAROOT/bin:$PATH
 
-# Currently, the machines supported are:
-#	ls6:	Lonestar6 at TACC
-#	ubuntu: Ubuntu 22.04
+usage() {
+    sed -n '2,10p' "$EQSIMUROOT/checkout.sh" | sed 's/^# \{0,1\}//'
+}
 
-# setting up environment variables 
-#echo " =                                                           ="
-#echo " =    To set up environment variables                        ="
-#echo " =        ESCIROOT, EQQUASIROOT, EQDYNAROOT                  ="
-#echo " =    and adding executables to PATH                         ="
-#echo " =    Please 'source checkout.sh'                            ="
-
-export ESCIROOT=$(pwd)
-export EQDYNAROOT=$(pwd)/components/eqdyna
-export EQQYASIROOT=$(pwd)/components/eqquasi
-export PATH=$(pwd)/bin:$(pwd)/utils:$PATH
-#echo ESCIROOT
-#echo PATH
-
+MACH=""
+MODE=""
+OPTIND=1
 while getopts "hi:u:" OPTION; do
     case $OPTION in
-        i)
-            MACH=$OPTARG
-            UPDATE="False"
-            ;;
-        u)
-            MACH=$OPTARG
-            UPDATE="True"
-            ;;
-        h)
-            echo "Usage: ./checkout.sh [-h] [-i Machine_name] [-u Machine_name]        "
-            echo "                                                                     "
-            echo "Examples:                                                            "
-            echo "                                                                     "
-            echo "./checkout.sh -h                                                     "
-            echo " -----Display this help message                                      "
-            echo "                                                                     "
-            echo "./checkout.sh -i ls6                                                 "
-            echo " -----Install ESCI on Lonestar6 at TACC                              "
-            echo "                                                                     "
-            echo "./checkout.sh -u ubuntu                                              "
-            echo " -----Update all components with git pull                            "
-            echo " -----on ubuntu                                                      "
-            echo "                                                                     "
-            echo "source checkout.sh                                            "
-            echo " -----Activate ENV VAR EQQUASIROOT and add exes to PATH              "
-            echo "                                                                     "
-            echo "Currently supported machines include:                                "
-            echo " ls6/ubuntu                                                          "
-            ;;
+        i) MACH=$OPTARG; MODE=install ;;
+        u) MACH=$OPTARG; MODE=update ;;
+        h) usage ;;
+        *) usage; return 1 2>/dev/null || exit 1 ;;
     esac
-done 
+done
 
-if [ -n "$MACH" ]; then 
-    export MACHINE=$MACH
-    
-    echo "Installing ESCI on " $MACHINE " ... ..."
-    
-    if [ $UPDATE = "False" ]; then 
-        rm -rf components bin
-        mkdir components
-        mkdir bin
+# Sourced with no flags: environment only.
+[ -z "$MODE" ] && { return 0 2>/dev/null || exit 0; }
+
+set -e
+cd "$EQSIMUROOT"
+[ "$MODE" = install ] && rm -rf components
+mkdir -p components
+
+grep -v '^#' components.txt | while read -r name repo commit; do
+    [ -z "$name" ] && continue
+    dir=components/$name
+    if [ "$MODE" = install ]; then
+        git clone "$repo" "$dir"
+    elif [ ! -d "$dir/.git" ]; then
+        echo "checkout.sh: $dir missing; run ./checkout.sh -i $MACH" >&2
+        exit 1
+    else
+        git -C "$dir" fetch origin
     fi
-    
-    cd components 
-    #1 download/update and install EQquasi
-    if [ $UPDATE = "False" ]; then 
-        git clone https://github.com/dunyuliu/EQquasi.git eqquasi
-        cd eqquasi 
-    else
-        cd eqquasi 
-        git stash
-        git pull
-    fi 
-    
-    chmod 755 install-eqquasi.sh
-    ./install-eqquasi.sh -m $MACHINE
-    cp bin/eqquasi ../../bin/
-    cd .. # back to components
-    
-    #2 download/update and install EQdyna
-    if [ $UPDATE = "False" ]; then 
-        git clone https://github.com/dunyuliu/EQdyna.git eqdyna
-        cd eqdyna
-    else
-        cd eqdyna
-        git stash
-        git pull
-    fi 
-    
-    chmod 755 install-eqdyna.sh
-    ./install-eqdyna.sh -m $MACHINE
-    cp bin/eqdyna ../../bin/
-    cd .. # back to components
-    
-    # # download and install SORD
-    # git clone https://github.com/wangyf/sordw3 sord
-    # cd sord
-    # cd src
-    # cp makefile_mpi makefile
-    # make
-    # cp sord-mO ../../../bin/
-    # cd ../../.. # back to components
-fi 
+    git -C "$dir" checkout --detach "$commit"
+    echo "$name at $(git -C "$dir" rev-parse HEAD)"
+done
+
+(cd components/eqquasi && bash install.eqquasi.sh -m "$MACH")
+(cd components/eqdyna  && bash install-eqdyna.sh  -m "$MACH")
+echo "EQsimu ready. Run: source checkout.sh"

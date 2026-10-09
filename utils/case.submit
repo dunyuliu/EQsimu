@@ -1,12 +1,8 @@
 #! /usr/bin/env python3
 """
-Script to launch a series of dependent batch job to HPC for cycles.
-It loads user_defined_params.py, which defines the starting and ending IDs of earthquake cycle queue.
+Submit the chain of dependent batch jobs that case.setup wrote to exe.sh.
 """
-import os
-
-def _main_func(description): 
-    os.system("source exe.sh") # run the script to submit dependent jobs.
+import subprocess
 
 if __name__ == "__main__":
-    _main_func(__doc__)
+    subprocess.run(["bash", "exe.sh"], check=True)
