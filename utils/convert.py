@@ -15,6 +15,7 @@ import sys
 UTILS = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, UTILS)
 import roughness
+import machines
 
 # Problem fields written to each code under the same name.
 COMMON = ["mode", "fxmin", "fxmax", "fzmin", "fzmax", "dx", "ntotft",
@@ -155,9 +156,17 @@ def render(par, funcs, code, source):
     return "\n".join(lines) + "\n"
 
 
-def write_code_compset(compset_dir, code, out_dir):
-    """Write <out_dir>/user_defined_params.py (+ fault geometry) for code."""
+def write_code_compset(compset_dir, code, out_dir, machine):
+    """Write <out_dir>/user_defined_params.py (+ fault geometry) for code.
+
+    machine selects the HPC_ncpu/nnode/queue/time/account (and, for eqdyna,
+    the nx/ny/nz process grid) from utils/machines.py's registry; these are
+    launch settings, never part of the problem (PROJECT_RULES.md rule 7), so
+    they are merged into par.eqquasi / par.eqdyna here rather than read off
+    the compset.
+    """
     par, funcs = load_problem(compset_dir)
+    getattr(par, code).update(machines.machine(machine)[code])
     os.makedirs(out_dir, exist_ok=True)
     text = render(par, funcs, code, os.path.basename(compset_dir.rstrip("/")))
     with open(os.path.join(out_dir, "user_defined_params.py"), "w") as f:

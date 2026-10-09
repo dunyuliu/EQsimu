@@ -76,8 +76,9 @@ par.eqquasi = dict(
     far_vel_load=4e-10,
     exit_slip_rate=0.2,
     fric_sw_fs=0, fric_sw_fd=0, fric_sw_D0=0,
-    HPC_nnode=1, HPC_ncpu=30, HPC_queue="normal", HPC_time="20:00:00",
-    HPC_account="EAR22012",
+    # HPC_nnode/HPC_ncpu/HPC_queue/HPC_time/HPC_account are machine/launch
+    # settings, not part of the problem -- utils/convert.py merges them in
+    # from utils/machines.py, keyed by create.newcase's --machine flag.
     st_coor_on_fault=[[-36.0, 0.0], [-16.0, 0.0], [0.0, 0.0], [16.0, 0.0],
                       [36.0, 0.0], [-24.0, 0.0], [-16.0, 0.0], [0.0, -10.0],
                       [16.0, -10.0], [0.0, -22.0]],
@@ -104,9 +105,11 @@ par.eqdyna = dict(
     output_plastic=0,
     outputGroundMotion=1,
     nucR=3.e3, nucRuptVel=-9999., nucdtau0=45.0e6,
-    nx=8, ny=4, nz=4,
-    HPC_ncpu=128, HPC_nnode=2, HPC_queue="normal", HPC_time="02:00:00",
-    HPC_account="EAR22012",
+    # nx/ny/nz (EQdyna's MPI process grid, nx*ny*nz == this code's own
+    # HPC_ncpu) and HPC_nnode/HPC_ncpu/HPC_queue/HPC_time/HPC_account are
+    # machine/launch settings, not part of the problem -- utils/convert.py
+    # merges them in from utils/machines.py, keyed by create.newcase's
+    # --machine flag.
     st_coor_on_fault=[[0.0, -3.0], [0.0, -7.5], [0.0, -12.0], [9.0, -7.5],
                       [12.0, -3.0], [12.0, -12.0], [15.0, -7.5], [18.0, -7.5],
                       [-9.0, -7.5], [-12.0, -3.0], [-12.0, -12.0],
