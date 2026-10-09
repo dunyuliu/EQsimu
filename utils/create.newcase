@@ -1,10 +1,12 @@
 #! /usr/bin/env python3
 """
-create.newcase MODE CASE COMPSET
+create.newcase MODE CASE COMPSET --machine MACHINE
 
 Convert the EQsimu compset COMPSET (compset/COMPSET/user_defined_params.py)
 into each code's user_defined_params.py, then stage the case with the code's
-own create.newcase.
+own create.newcase. MACHINE (ls6, local, ...; see utils/machines.py) picks
+the HPC_ncpu/nnode/queue/time/account (and, for EQdyna, the nx/ny/nz process
+grid) the case launches with -- a problem never hardcodes these.
 
   qdc  quasi-dynamic cycle, EQquasi        CASE is an EQquasi case
   dr   dynamic rupture, EQdyna             CASE is an EQdyna case
@@ -19,15 +21,16 @@ import sys
 import tempfile
 
 import convert
+import machines
 
 CODES = {"qdc": ["eqquasi"], "dr": ["eqdyna"], "fdc": ["eqquasi", "eqdyna"]}
 UTILS = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(UTILS)
 
 
-def stage(code, compset_dir, case_dir, gen_dir):
+def stage(code, compset_dir, case_dir, gen_dir, machine):
     """Generate code's compset in gen_dir and stage case_dir from it."""
-    convert.write_code_compset(compset_dir, code, gen_dir)
+    convert.write_code_compset(compset_dir, code, gen_dir, machine)
     tool = os.path.join(os.environ[convert.ROOT_ENV[code]], "scripts",
                         "create.newcase")
     subprocess.run([sys.executable, tool, case_dir,
@@ -50,9 +53,19 @@ def record(case_dir, compset_dir, gen):
 
 
 def main():
-    if len(sys.argv) != 4 or sys.argv[1] not in CODES:
+    args = sys.argv[1:]
+    machine = None
+    if "--machine" in args:
+        i = args.index("--machine")
+        del args[i]
+        try:
+            machine = args.pop(i)
+        except IndexError:
+            sys.exit(__doc__)
+    if len(args) != 3 or args[0] not in CODES or machine is None:
         sys.exit(__doc__)
-    mode, case_dir, compset = sys.argv[1:]
+    machines.machine(machine)  # raise now, naming the known machines, if unknown
+    mode, case_dir, compset = args
     compset_dir = os.path.join(ROOT, "compset", compset)
     if not os.path.isdir(compset_dir):
         sys.exit(f"create.newcase: no EQsimu compset {compset} in "
@@ -66,16 +79,22 @@ def main():
         if mode == "fdc":
             os.makedirs(case_dir)
             for code in gen:
-                stage(code, compset_dir, os.path.join(case_dir, code), gen[code])
-            for f in ["case.setup", "case.submit", "problemDefaults.py"]:
+                stage(code, compset_dir, os.path.join(case_dir, code),
+                      gen[code], machine)
+            for f in ["case.setup", "case.submit", "problemDefaults.py",
+                     "machines.py"]:
                 shutil.copy(os.path.join(UTILS, f), case_dir)
             shutil.copy(os.path.join(compset_dir, "user_defined_params.py"),
                         case_dir)
+            # case.setup (EQsimu's own fdc orchestrator) reads this to decide
+            # whether to sbatch each cycle or run it directly with bash.
+            with open(os.path.join(case_dir, "machine.txt"), "w") as f:
+                f.write(machine + "\n")
         else:
             (code,) = gen
-            stage(code, compset_dir, case_dir, gen[code])
+            stage(code, compset_dir, case_dir, gen[code], machine)
         record(case_dir, compset_dir, gen)
-    print(f"{mode} case {case_dir} from compset {compset}")
+    print(f"{mode} case {case_dir} from compset {compset}, machine {machine}")
 
 
 if __name__ == "__main__":

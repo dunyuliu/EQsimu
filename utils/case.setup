@@ -9,6 +9,13 @@ Each job runs its code's own run.sh. EQsimu passes only the restart files:
   cycle k EQquasi reads eqdyna/result/cycle<k-2>/fault.dyna.r.nc (end of rupture)
 EQquasi keeps its outputs in eqquasi/result/cycle<k-1>/; each EQdyna cycle
 runs in eqdyna/result/cycle<k-1>/, a copy of the eqdyna/ case files.
+
+The case was created for one machine (create.newcase's --machine, recorded in
+machine.txt). A scheduler machine (utils/machines.py: scheduler="slurm")
+sbatches each cycle's batch.<code>.hpc, chained with --dependency=afterok. A
+machine with no scheduler (scheduler=None, e.g. "local") instead runs each
+batch.<code>.hpc directly with bash, in order, under this script's own
+set -e -- no sbatch anywhere.
 """
 import re
 import subprocess
@@ -16,6 +23,12 @@ import sys
 
 sys.dont_write_bytecode = True
 from user_defined_params import par
+from machines import machine
+
+
+def read_machine():
+    with open("machine.txt") as f:
+        return f.read().strip()
 
 
 def prepare(code):
@@ -78,16 +91,25 @@ def write_batch(code, body):
         f.write("\n".join(header(code)) + "\n" + body)
 
 
-def create_exe_shell():
+def create_exe_shell(scheduler):
     with open("exe.sh", "w") as f:
         f.write("set -e\n")
         for cycle in range(par.istart, par.iend + 1):
-            dep = "" if cycle == par.istart else "--dependency=afterok:$jd "
-            f.write(f"jq=$(sbatch --parsable {dep}--export=ALL,CYCLE={cycle} "
-                    f"batch.eqquasi.hpc)\n")
-            f.write(f"jd=$(sbatch --parsable --dependency=afterok:$jq "
-                    f"--export=ALL,CYCLE={cycle} batch.eqdyna.hpc)\n")
-            f.write(f'echo "cycle {cycle}: EQquasi $jq, EQdyna $jd"\n')
+            if scheduler == "slurm":
+                dep = "" if cycle == par.istart else "--dependency=afterok:$jd "
+                f.write(f"jq=$(sbatch --parsable {dep}--export=ALL,CYCLE={cycle} "
+                        f"batch.eqquasi.hpc)\n")
+                f.write(f"jd=$(sbatch --parsable --dependency=afterok:$jq "
+                        f"--export=ALL,CYCLE={cycle} batch.eqdyna.hpc)\n")
+                f.write(f'echo "cycle {cycle}: EQquasi $jq, EQdyna $jd"\n')
+            else:
+                # No scheduler (utils/machines.py: scheduler=None): no job to
+                # queue, so run each cycle's body directly -- this script's
+                # own `set -e` (not sbatch's --dependency=afterok) is what
+                # stops the chain on a failed cycle.
+                f.write(f"CYCLE={cycle} bash batch.eqquasi.hpc\n")
+                f.write(f"CYCLE={cycle} bash batch.eqdyna.hpc\n")
+                f.write(f'echo "cycle {cycle}: EQquasi, EQdyna (direct, no scheduler)"\n')
 
 
 if __name__ == "__main__":
@@ -96,4 +118,4 @@ if __name__ == "__main__":
     eqquasi_run_cycle()
     write_batch("eqquasi", EQQUASI_BODY)
     write_batch("eqdyna", EQDYNA_BODY)
-    create_exe_shell()
+    create_exe_shell(machine(read_machine())["scheduler"])
