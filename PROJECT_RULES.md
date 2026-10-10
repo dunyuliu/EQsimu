@@ -8,6 +8,7 @@ Index:
 5. No silent fallbacks or swallowed errors
 6. A living status board
 7. A problem is defined once, in `compset/`
+8. `convert.py` changes are verified by importing every generated compset
 
 ---
 
@@ -75,3 +76,30 @@ never edited by hand. Code-specific settings go in `par.eqquasi` /
 
 **Rationale**: the same case kept in two codes drifted (bp1001: σn −25 vs
 −50 MPa), and nothing checked it.
+
+## 8. `convert.py` changes are verified by importing every generated compset
+
+Any change to `utils/convert.py`'s compset-loading or function-inlining logic
+is verified by actually importing the generated `user_defined_params.py` for
+every compset, for both EQquasi and EQdyna — not by checking a downstream
+artifact (e.g. the geometry file) and inferring the Python import also works.
+
+**Rationale**: PR #7 made `compset/bp1001.fdc.rough.1000/user_defined_params.py`
+derive `par` via `importlib`-loading the 250 m compset, but `convert.py`'s
+`load_problem()` only inlines functions whose `__module__` matches the
+compset being converted — since the 1000 m compset never redefines
+`fault`/`shear_steady_state` itself, the generated file for both codes was
+missing those `def`s and failed on import with `NameError: name 'fault' is
+not defined`. PR #7's verification only imported/checked
+`bFault_Rough_Geometry.txt` and never imported the generated
+`user_defined_params.py`, so the regression shipped and reclosed the board
+row it had just reopened.
+
+**How to apply**: after touching `load_problem()`, `write_code_compset()`, or
+any inlining/derivation path in `convert.py`, run, for each compset in
+`compset/` and each of `eqquasi`/`eqdyna`:
+`python3 -c "import convert; convert.write_code_compset('<compset>', '<code>', '<out>', 'local')"`
+then `python3 -c "from user_defined_params import par"` against the generated
+file, with `EQQUASIROOT`/`EQDYNAROOT` pointed at the pinned checkouts. A
+derived-output check (geometry file, plot) is in addition to this, never
+instead of it.
