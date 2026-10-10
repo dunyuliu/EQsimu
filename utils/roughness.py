@@ -51,6 +51,32 @@ def from_file(p, path):
                   mode="edge")
 
 
+def resample(x, z, y, from_dx, to_dx, cutoff=2000.0):
+    """Low-pass y [iz, ix] at a cutoff wavelength (m, default 2 km) and
+    decimate from from_dx to to_dx, a whole multiple of from_dx. Returns the
+    new x, z, y on the coarser grid, same origin as the input.
+
+    The low-pass is a 2-D Gaussian in wavenumber space (isotropic over x and
+    z), applied before decimation so wavelengths below the cutoff are
+    attenuated rather than aliased by point-picking. Slopes are never taken
+    from this grid directly -- recompute them with roughness.write()'s
+    np.gradient on the returned y.
+    """
+    step = to_dx/from_dx
+    if not np.isclose(step, round(step)) or round(step) < 1:
+        raise ValueError(f"resample: to_dx {to_dx} is not a whole multiple "
+                          f"of from_dx {from_dx}")
+    step = round(step)
+    nz, nx = y.shape
+    kx = 2*np.pi*np.fft.fftfreq(nx, d=from_dx)
+    kz = 2*np.pi*np.fft.fftfreq(nz, d=from_dx)
+    k = np.sqrt(kx[None, :]**2 + kz[:, None]**2)
+    kc = 2*np.pi/cutoff
+    filt = np.exp(-(k/kc)**2)
+    y_lp = np.real(np.fft.ifft2(np.fft.fft2(y)*filt))
+    return x[::step], z[::step], y_lp[::step, ::step]
+
+
 def fractal_surface(lx, hurst, seed):
     """EQdyna scripts/generateFaultInterface:generateFractalSurface, vectorized;
     identical output for the same lx, hurst and seed."""
