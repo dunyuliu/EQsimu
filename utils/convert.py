@@ -138,9 +138,13 @@ def load_problem(compset_dir):
                if getattr(par, k) is None]
     if missing:
         raise ConvertError(f"{compset_dir}: unset problem fields: {missing}")
-    funcs = sorted((f for f in vars(mod).values()
-                    if inspect.isfunction(f) and f.__module__ == mod.__name__),
-                   key=lambda f: f.__code__.co_firstlineno)
+    own = {f for f in vars(mod).values()
+           if inspect.isfunction(f) and f.__module__ == mod.__name__}
+    fault_globals = par.fault.__globals__
+    fault_mod_name = fault_globals.get("__name__")
+    defining = {f for f in fault_globals.values()
+                if inspect.isfunction(f) and f.__module__ == fault_mod_name}
+    funcs = sorted(own | defining, key=lambda f: f.__code__.co_firstlineno)
     return par, funcs
 
 
