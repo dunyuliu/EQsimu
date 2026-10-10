@@ -84,16 +84,8 @@ is verified by actually importing the generated `user_defined_params.py` for
 every compset, for both EQquasi and EQdyna — not by checking a downstream
 artifact (e.g. the geometry file) and inferring the Python import also works.
 
-**Rationale**: PR #7 made `compset/bp1001.fdc.rough.1000/user_defined_params.py`
-derive `par` via `importlib`-loading the 250 m compset, but `convert.py`'s
-`load_problem()` only inlines functions whose `__module__` matches the
-compset being converted — since the 1000 m compset never redefines
-`fault`/`shear_steady_state` itself, the generated file for both codes was
-missing those `def`s and failed on import with `NameError: name 'fault' is
-not defined`. PR #7's verification only imported/checked
-`bFault_Rough_Geometry.txt` and never imported the generated
-`user_defined_params.py`, so the regression shipped and reclosed the board
-row it had just reopened.
+**Rationale**: a derived compset once lost its inlined `fault()` in both
+generated files; the check had looked only at the geometry file.
 
 **How to apply**: after touching `load_problem()`, `write_code_compset()`, or
 any inlining/derivation path in `convert.py`, run, for each compset in

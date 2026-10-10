@@ -45,10 +45,14 @@ through that code's own `run.sh`. EQsimu passes only the restart files
 | Compset | |
 |---|---|
 | [`bp1001.fdc.rough.250`](compset/bp1001.fdc.rough.250/README.md) | SEAS BP1001, rough fault, 250 m |
+| [`bp1001.fdc.rough.1000`](compset/bp1001.fdc.rough.1000/README.md) | the same problem at 1 km, for a local run |
+| [`test.stepover.2fault`](compset/test.stepover.2fault/README.md) | planar two-fault stepover, tests the multi-fault conversion |
 
 A new problem is a folder in `compset/` with a `user_defined_params.py`
 (`par = problem()`, see `utils/problemDefaults.py`), its input files, and a
 README with `setup.png` from `utils/plot_problem.py`. Roughness is
 `par.roughness`: `dict(kind="file", path=...)` for a heights file in the
-folder, `dict(kind="fractal", hurst=1.0, alpha=0.005, seed=1)` for EQdyna's
+folder, `dict(kind="resample", path=..., from_dx=..., cutoff=...)` for
+another resolution's heights file (low-passed, then sampled),
+`dict(kind="fractal", hurst=1.0, alpha=0.005, seed=1)` for EQdyna's
 synthetic self-similar surface, or `None` for a planar fault.

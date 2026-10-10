@@ -2,7 +2,7 @@
 test.stepover.2fault: a planar 2-fault (ntotft=2) stepover, EQsimu-side.
 
 Not a physical benchmark -- it exists to exercise utils/convert.py's
-multi-fault path end to end (board P2, "Stepover, conversion side"):
+multi-fault path end to end:
 par.faultgeom (one 5-tuple per fault) and a per-fault fault(p, x, z, ift)
 feed both codes' own conventions --
 
@@ -21,11 +21,6 @@ Geometry (m), right-lateral, releasing step-over:
 dx = 1000 m: every fault bound and the 2 km stepover offset is a whole
 multiple of dx from the union origin (-20e3, -10e3), as both codes'
 mesh generators require.
-
-Known gap: utils/plot_problem.py calls par.fault(par, x, z) with no ift and
-does not understand par.faultgeom, so it does not draw this compset's
-setup.png; that is multi-fault plotting support, a separate gap from this
-one (PATHWAY_FORWARD.md).
 """
 from math import *
 from problemDefaults import problem
