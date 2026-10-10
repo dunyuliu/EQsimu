@@ -11,6 +11,10 @@
   shouldn't simply pick py/px from the 250 grids."**
 - 2026-10-09, on the 1 km roughness: **"it has to go through the script to
   recompute dy/dx."**
+- 2026-10-09, on how the 1 km heights come from the 250 m file (asked:
+  low-pass at 2 km before sampling, rather than taking every 4th point;
+  dy/dx and dy/dz then recomputed by `roughness.py` at 1 km):
+  **"sounds good"**.
 
 | Priority | Item | Command | Last checked |
 |---|---|---|---|
