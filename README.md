@@ -38,7 +38,8 @@ An fdc case runs, per cycle, one EQquasi job and then one EQdyna job, each
 through that code's own `run.sh`. EQsimu passes only the restart files
 (`fault.r.nc` to EQdyna, `fault.dyna.r.nc` back to EQquasi). Results land in
 `eqquasi/result/cycle<k>/` and `eqdyna/result/cycle<k>/`. The cycles run are
-`istart`–`iend` in the case's `user_defined_params.py`.
+`istart`–`iend` in the case's `user_defined_params.py`, which loads the
+problem from `eqsimu/compset/`.
 
 ## Problems
 

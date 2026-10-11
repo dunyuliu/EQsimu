@@ -2,4 +2,4 @@
 # To move a pin: change the commit here, rerun ./checkout.sh -u <mach>.
 # name     repository                                commit
 eqquasi    https://github.com/dunyuliu/EQquasi.git   524a5236b411c38fa216cff97bc6949bd83721e1
-eqdyna     https://github.com/dunyuliu/EQdyna.git    7d478e2772b7c8ecf1e0ddbb769489457db52781
+eqdyna     https://github.com/dunyuliu/EQdyna.git    42ce254085abad7a85c803b0b8dc1a7c33c5a261
