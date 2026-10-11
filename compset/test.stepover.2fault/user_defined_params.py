@@ -27,8 +27,7 @@ from problemDefaults import problem
 
 par = problem()
 
-par.mode = 1  # quasi-dynamic only; this compset is qdc/dr-equivalent, not
-              # fdc (the restart bridge is a separate, blocked board row)
+par.mode = 2  # fully dynamic: EQquasi interseismic, EQdyna rupture
 par.istart, par.iend = 1, 1
 
 par.ntotft = 2
@@ -62,12 +61,17 @@ def shear_steady_state(p, a, b, v0, r0, load_rate, norm, slip_rate):
 
 
 def fault(p, x, z, ift):
-    # Simple velocity-weakening core, |z| <= 8 km, else velocity-strengthening.
+    # Velocity-weakening core at least 3 km inside every fault edge, else
+    # velocity-strengthening, so EQdyna's rupture arrests before an edge node.
+    # The x ranges repeat FAULT_A/FAULT_B: convert.py copies this function's
+    # source into each code's file, where p holds only the problem fields.
     # init_norm differs by 2 MPa per fault so a convert.py bug that aliases
     # fault 0's array onto fault 1 (or vice versa) shows up as the wrong
     # constant on the wrong fault's nodes (same check test.stepover.qdc.1000
     # uses upstream).
-    a = p.fric_rsf_a if abs(z) <= 8e3 else p.fric_rsf_a + p.fric_rsf_deltaa
+    xlo, xhi = ((-20.0e3, 0.0e3), (-5.0e3, 20.0e3))[ift]
+    vw = abs(z) <= 7e3 and xlo + 3e3 <= x <= xhi - 3e3
+    a = p.fric_rsf_a if vw else p.fric_rsf_a + p.fric_rsf_deltaa
     tnrm = p.init_norm - ift*2.0e6
     return dict(
         a=a, b=p.fric_rsf_b, Dc=p.fric_rsf_Dc,
@@ -90,16 +94,17 @@ par.eqquasi = dict(
     nuni_y_plus=5, nuni_y_minus=5, enlarging_ratio=1.3e0,
     rheology=1,
     solver=1,
-    xi=0.015,
+    xi=0.005,
     minDc=0.13,
     far_vel_load=4e-10,
-    exit_slip_rate=1.0e-3,
+    exit_slip_rate=0.2,
     fric_sw_fs=0, fric_sw_fd=0, fric_sw_D0=0,
     HPC_nnode=1, HPC_ncpu=2, HPC_queue="normal", HPC_time="00:30:00",
     HPC_account="EAR22013",
     st_coor_on_fault=[[-10.0, -2.0], [0.0, -2.0], [5.0, -2.0]],
     st_coor_off_fault=[[0, 5, 0], [0, 5, -5]],
     az_op=2, az_maxiter=2000, az_tol=1.0e-7,
+    C_normal_stress_caps=1,
 )
 
 par.eqdyna = dict(
@@ -110,8 +115,8 @@ par.eqdyna = dict(
     zmin=-20.0e3, zmax=0.0e3,
     xsource=-10.0e3, ysource=0.0, zsource=-5.0e3,
     nuni_y_plus=10, nuni_y_minus=10, enlarging_ratio=1.025e0,
-    term=5.,
-    dt=0.5*par.dx/par.vp,
+    term=150.,
+    dt=0.25*par.dx/par.vp,
     C_elastic=1, C_nuclea=0, C_degen=0,
     nucfault=1,
     output_plastic=0,

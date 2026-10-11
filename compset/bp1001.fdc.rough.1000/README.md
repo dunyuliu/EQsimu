@@ -33,10 +33,18 @@ cd runs/bp1001.1000 && ./case.setup && ./case.submit
 
 ## Results
 
-Not yet run with the pinned codes.
+Two cycles run locally with the pinned codes (`--machine local`, 6 ranks,
+2026-10-10/11). Cycle 1: EQquasi reaches rupture after 17.5 years
+(48 min wall), EQdyna runs the rupture to 146 s. Cycle 2 starts from
+EQdyna's `fault.dyna.r.nc` and reaches the next rupture after 198 years.
+No physical comparison against the 250 m case or the SEAS results yet.
 
 ## Known issues
 
+- EQdyna writes no `faultst*` file for the 7 on-fault stations at 7.5 km
+  depth (it warns at startup): 7.5 km is not a node of the 1 km grid. The
+  station set is kept the same as `bp1001.fdc.rough.250`'s, so the two
+  resolutions share their stations at 3 and 12 km depth.
 - Slopes (dy/dx, dy/dz) are never copied from the 250 m file:
   `roughness.heights()` calls `roughness.read()` on the 250 m file,
   `roughness.resample()` (low-pass + decimate) and places the result on the
