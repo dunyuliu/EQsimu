@@ -15,6 +15,9 @@
   low-pass at 2 km before sampling, rather than taking every 4th point;
   dy/dx and dy/dz then recomputed by `roughness.py` at 1 km):
   **"sounds good"**.
+- 2026-10-10, on the local-run choice (asked: the existing builds in the
+  `eqquasi-petsc` conda env, or a fresh `checkout.sh -i`): **"Use existing
+  env for now"**.
 
 | Priority | Item | Command | Last checked |
 |---|---|---|---|
