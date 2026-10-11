@@ -18,12 +18,14 @@
 - 2026-10-10, on the local-run choice (asked: the existing builds in the
   `eqquasi-petsc` conda env, or a fresh `checkout.sh -i`): **"Use existing
   env for now"**.
+- 2026-10-11, on (1) the 1 km stations at 7.5 km depth (keep the 250 m set,
+  note the gap in the 1 km README) and (2) running `test.stepover.2fault` as
+  a real fdc case: **"Go"**.
 
 | Priority | Item | Command | Last checked |
 |---|---|---|---|
 | P1 | fdc on ls6 never run; locally `bp1001.fdc.rough.1000` ran two cycles for real on 2026-10-10/11 (`eqquasi-petsc` env, EQquasi `eqquasi-1.21.2` = pin source, EQdyna built at the pin): each EQquasi phase ended by handing over to EQdyna, and cycle 2's EQquasi started at peak slip rate 7.814489e-3 m/s, equal to the maximum in cycle 1's `fault.dyna.r.nc`. BLOCKED(owner): ls6 needs an MFA session ("Later") | `create.newcase fdc t bp1001.fdc.rough.1000 --machine ls6 && cd t && ./case.setup && ./case.submit` | 2026-10-11 |
-| P2 | `test.stepover.2fault` never run as a real fdc case; its two-fault restart hand-off is tested only as an I/O round trip in EQdyna's own tests | `create.newcase fdc t test.stepover.2fault --machine local && cd t && ./case.setup && ./case.submit` | 2026-10-11 |
-| P3 | At 1 km, EQdyna drops the 7 on-fault stations at 7.5 km depth (not a node of the 1 km grid; it warns, no `faultst*` file); keep the 250 m station set, or move them for this compset — owner's call | `grep -A9 'WARNING: 7 of 13' <case>/eqdyna/result/cycle0/*.log` | 2026-10-11 |
+| P2 | `test.stepover.2fault` fdc: cycle 1 runs locally (rupture on fault 1, EQdyna hands back at 6.7e-4 m/s); cycle 2's EQquasi diverges from EQdyna's `fault.dyna.r.nc` and stops with `STOP 508`. Swapping one field at a time from EQquasi's own `fault.r.nc` isolates fault 0's `effective_normal` (unclamped to −18.3 MPa at the stepover tip, against −25 MPa); the fix is in EQquasi's restart. BLOCKED(owner): report it to EQquasi | `create.newcase fdc t test.stepover.2fault --machine local && cd t && ./case.setup && ./case.submit` | 2026-10-11 |
 | P2 | Pins in `components.txt` are recent heads (EQquasi 2026-10-09, EQdyna `42ce254` 2026-10-10), not the versions behind Liu et al. (2020) | `git -C components/eqquasi log --until=2020-12-31 -1` | 2026-10-09 |
 | P3 | The 1 km low-pass (`roughness.resample`, Gaussian, 2 km cutoff) still passes about 37% amplitude at 2 km, the Nyquist wavelength of the 1 km grid; sharpen only if the owner asks | `grep -n "def resample" -A30 utils/roughness.py` | 2026-10-10 |
 | P3 | EQdyna's own `case_input/bp1001.fdc.rough.250` is in the flat pre-`par` format its `case.setup` no longer imports; report to EQdyna | `grep -c 'par = parameters' components/eqdyna/case_input/bp1001.fdc.rough.250/user_defined_params.py` | 2026-10-09 |
