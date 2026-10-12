@@ -206,6 +206,20 @@ def render(par, funcs, code, source):
              "par = parameters()"]
     lines += [f"par.{k} = {_lit(v, k)}" for k, v in _settings(par, code, known)]
     lines += ["par.dy = par.dx", "par.dz = par.dx"]
+    if code == "eqquasi":
+        # EQdyna hardwires its normal-stress state-law length scale L to Dc
+        # (src/fortran/faulting.f90) and exposes no input for it; EQquasi
+        # exposes fric_pc_L separately, defaulting to 0.0 (defaultParameters.py),
+        # which makes theta_pc track |sigma| instantly instead of lagging it
+        # on EQdyna's L = Dc timescale. Left at EQquasi's own default, a
+        # restart handed over from EQdyna (whose theta_pc genuinely lags) is
+        # read by EQquasi as an inconsistent state and the fault can go
+        # non-compressive within the first few time steps (STOP 508).
+        # 2026-10-12 owner decision: "they should use same input, same model
+        # setup on the fault" -- so EQsimu sets EQquasi's L to match EQdyna's
+        # hardwired value explicitly, rather than leaving either code on its
+        # own default.
+        lines.append("par.fric_pc_L = par.fric_rsf_Dc")
     if code == "eqdyna":
         lines += ["if par.nmat == 1:",
                   "    par.roumax, par.vmaxPML = par.rou, par.vp"]
