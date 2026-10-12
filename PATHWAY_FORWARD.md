@@ -30,6 +30,9 @@
   (EQdyna: L = Dc; EQquasi: `fric_pc_L`, default 0):
   **"they should use same input, same model setup on the fault"**, and
   **"i don't expect issues to connect"**.
+- 2026-10-12, on mismatches between the codes and on the handover files:
+  **"if the mismatch is upstream, report. eqsimu should have checks on
+  transfer files and if any inconsistency, break"**.
 
 | Priority | Item | Command | Last checked |
 |---|---|---|---|
