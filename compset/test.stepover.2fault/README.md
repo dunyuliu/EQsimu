@@ -22,12 +22,17 @@ Run locally with the pinned codes (`--machine local`, 2026-10-11). Cycle 1
 works: EQquasi reaches rupture on fault 1 after about 56 years, EQdyna runs
 it to 150 s and hands back at peak slip rate 6.7e-4 m/s.
 
+Cycle 2 used to stop within its first few steps with `STOP 508` reading
+EQdyna's restart. Root cause: EQdyna hardwires its normal-stress state-law
+length scale to the per-node Dc (no input for it); EQquasi's own `fric_pc_L`
+defaulted to 0.0, which sets theta_pc = |sigma| instantly instead of
+lagging it on EQdyna's timescale, so EQdyna's real restart state read as
+inconsistent. Fixed in `utils/convert.py` (`par.fric_pc_L =
+par.fric_rsf_Dc`, PR #22); upstream report on EQdyna:
+https://github.com/EQDYNA/EQdyna/issues/189. Verified on a fresh fdc
+rebuild (2026-10-12): cycle 2's EQquasi ran clean past 24,000+ steps / 350+
+simulated years with no STOP/NaN/netCDF error.
+
 ## Known issues
 
-- Cycle 2 fails: EQquasi diverges within its first steps from EQdyna's
-  `fault.dyna.r.nc` and stops with `STOP 508`. The trigger is fault 0's
-  `effective_normal` alone: the rupture on fault 1 unclamps fault 0's
-  stepover tip to −18.3 MPa (EQquasi's own file has −25 MPa there). With
-  EQquasi's own `effective_normal` for fault 0 and everything else from
-  EQdyna, the same restart runs. The restart layout of the two files is the
-  same. The fix belongs in EQquasi's restart, not in EQsimu.
+- None currently blocking; see `PATHWAY_FORWARD.md` for open P2/P3 items.
