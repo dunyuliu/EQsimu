@@ -23,7 +23,8 @@ source checkout.sh                              # env only
 create.newcase fdc CASE COMPSET --machine ls6   # or qdc / dr; --machine: utils/machines.py
 python3 utils/plot_problem.py compset/<name>    # setup.png for the README
 ```
-Work in raw bash, not conda.
+Work in raw bash, not conda; local runs use the existing `eqquasi-petsc`
+conda env (owner decision on the board, 2026-10-10).
 
 ## Checks before changing convert.py
 
