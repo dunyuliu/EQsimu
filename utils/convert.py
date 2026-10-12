@@ -184,6 +184,34 @@ def _namespace(par):
     return f"p = SimpleNamespace(\n    {body})"
 
 
+def _check_uniform_dc(par):
+    """par.fric_pc_L is written as the single scalar par.fric_rsf_Dc, but
+    par.fault(p, x, z[, ift]) returns a per-node Dc and nothing requires it
+    to be uniform. EQdyna's hardwired L tracks that per-node Dc, so a
+    non-uniform fault() would make EQdyna's per-node L disagree with
+    EQquasi's one fric_pc_L value; break instead of writing a silent
+    mismatch."""
+    fault_ift = len(inspect.signature(par.fault).parameters) >= 4
+    geoms = (par.faultgeom if par.ntotft > 1
+             else [(par.fxmin, par.fxmax, None, par.fzmin, par.fzmax)])
+    for ift, (xlo, xhi, _, zlo, zhi) in enumerate(geoms):
+        nfx = round((xhi - xlo)/par.dx) + 1
+        nfz = round((zhi - zlo)/par.dx) + 1
+        for ix in range(nfx):
+            x = xlo + ix*par.dx
+            for iz in range(nfz):
+                z = zlo + iz*par.dx
+                args = (par, x, z, ift) if fault_ift else (par, x, z)
+                dc = par.fault(*args)["Dc"]
+                if dc != par.fric_rsf_Dc:
+                    raise ConvertError(
+                        f"par.fault returns Dc = {dc} at fault {ift} "
+                        f"(x={x}, z={z}), != par.fric_rsf_Dc = "
+                        f"{par.fric_rsf_Dc}; par.fric_pc_L is a single "
+                        "scalar and cannot represent a non-uniform Dc "
+                        "against EQdyna's per-node hardwired L")
+
+
 def render(par, funcs, code, source):
     multi = par.ntotft > 1
     dp = code_parameters(code)
@@ -207,18 +235,15 @@ def render(par, funcs, code, source):
     lines += [f"par.{k} = {_lit(v, k)}" for k, v in _settings(par, code, known)]
     lines += ["par.dy = par.dx", "par.dz = par.dx"]
     if code == "eqquasi":
-        # EQdyna hardwires its normal-stress state-law length scale L to Dc
-        # (src/fortran/faulting.f90) and exposes no input for it; EQquasi
-        # exposes fric_pc_L separately, defaulting to 0.0 (defaultParameters.py),
-        # which makes theta_pc track |sigma| instantly instead of lagging it
-        # on EQdyna's L = Dc timescale. Left at EQquasi's own default, a
-        # restart handed over from EQdyna (whose theta_pc genuinely lags) is
-        # read by EQquasi as an inconsistent state and the fault can go
-        # non-compressive within the first few time steps (STOP 508).
-        # 2026-10-12 owner decision: "they should use same input, same model
-        # setup on the fault" -- so EQsimu sets EQquasi's L to match EQdyna's
-        # hardwired value explicitly, rather than leaving either code on its
-        # own default.
+        # EQdyna hardwires its normal-stress state-law L to the per-node Dc
+        # (faulting.f90, no input); EQquasi's own fric_pc_L defaults to 0.0,
+        # which read an EQdyna restart as inconsistent state (STOP 508).
+        # 2026-10-12 owner decision: same input, same model setup on the
+        # fault. This is a deliberate exception to CLAUDE.md's "EQquasi
+        # output must match that code's own compset par exactly" check:
+        # EQquasi's own bp1001 compset leaves fric_pc_L at its 0.0 default,
+        # so this output now differs from it on that one field.
+        _check_uniform_dc(par)
         lines.append("par.fric_pc_L = par.fric_rsf_Dc")
     if code == "eqdyna":
         lines += ["if par.nmat == 1:",
