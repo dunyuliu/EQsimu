@@ -21,6 +21,8 @@
 - 2026-10-11, on (1) the 1 km stations at 7.5 km depth (keep the 250 m set,
   note the gap in the 1 km README) and (2) running `test.stepover.2fault` as
   a real fdc case: **"Go"**.
+- 2026-10-12, on adding the local conda-env exception to `CLAUDE.md`
+  (asked: add a one-line carve-out, or leave it board-only): **"1 yes"**.
 
 | Priority | Item | Command | Last checked |
 |---|---|---|---|
