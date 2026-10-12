@@ -26,6 +26,9 @@
 - 2026-10-12, on the `test.stepover.2fault` cycle-2 restart failure:
   **"both codes should handle the stresses and other physical vars in same
   fashion."** and **"can you nail down which one has ptential issues?"**
+- 2026-10-12, on the normal-stress state law differing between the codes
+  (EQdyna: L = Dc; EQquasi: `fric_pc_L`, default 0):
+  **"they should use same input, same model setup on the fault"**.
 
 | Priority | Item | Command | Last checked |
 |---|---|---|---|
