@@ -28,7 +28,8 @@
   fashion."** and **"can you nail down which one has ptential issues?"**
 - 2026-10-12, on the normal-stress state law differing between the codes
   (EQdyna: L = Dc; EQquasi: `fric_pc_L`, default 0):
-  **"they should use same input, same model setup on the fault"**.
+  **"they should use same input, same model setup on the fault"**, and
+  **"i don't expect issues to connect"**.
 
 | Priority | Item | Command | Last checked |
 |---|---|---|---|
