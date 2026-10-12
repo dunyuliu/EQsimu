@@ -23,6 +23,9 @@
   a real fdc case: **"Go"**.
 - 2026-10-12, on adding the local conda-env exception to `CLAUDE.md`
   (asked: add a one-line carve-out, or leave it board-only): **"1 yes"**.
+- 2026-10-12, on the `test.stepover.2fault` cycle-2 restart failure:
+  **"both codes should handle the stresses and other physical vars in same
+  fashion."** and **"can you nail down which one has ptential issues?"**
 
 | Priority | Item | Command | Last checked |
 |---|---|---|---|
