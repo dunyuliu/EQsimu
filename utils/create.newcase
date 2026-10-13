@@ -118,7 +118,7 @@ def main():
                 stage(code, compset_dir, os.path.join(case_dir, code),
                       gen[code], machine)
             for f in ["case.setup", "case.submit", "problemDefaults.py",
-                     "machines.py"]:
+                     "machines.py", "check_handover.py"]:
                 shutil.copy(os.path.join(UTILS, f), case_dir)
             with open(os.path.join(case_dir, "user_defined_params.py"),
                       "w") as f:

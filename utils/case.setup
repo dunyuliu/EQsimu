@@ -69,6 +69,12 @@ k=$((CYCLE-1))
 rm -rf eqquasi/restart && mkdir eqquasi/restart
 if [ "$CYCLE" -gt 1 ]; then
   cp "eqdyna/result/cycle$((k-1))/fault.dyna.r.nc" eqquasi/restart/fault.r.nc
+  # PATHWAY_FORWARD.md owner decision 2026-10-12: eqsimu checks transfer
+  # files at every handover and breaks on any inconsistency -- never a
+  # silent warning. Checks the EQdyna-to-EQquasi handover before EQquasi
+  # reads it.
+  python3 check_handover.py --direction eqdyna_to_eqquasi \\
+    --file eqquasi/restart/fault.r.nc --params-dir eqquasi
 fi
 cd eqquasi && CYCLE=$CYCLE RESTART_DIR=restart bash run.cycle.sh
 test -e "result/cycle$k/fault.r.nc"
@@ -81,6 +87,15 @@ d="eqdyna/result/cycle$k"
 rm -rf "$d" && mkdir -p "$d"
 find eqdyna -maxdepth 1 -type f -exec cp {} "$d"/ \\;
 cp "eqquasi/result/cycle$k/fault.r.nc" "$d"/
+# PATHWAY_FORWARD.md owner decision 2026-10-12: eqsimu checks transfer files
+# at every handover and breaks on any inconsistency -- never a silent
+# warning. Checks the EQquasi-to-EQdyna handover before EQdyna reads it.
+# NOTE: this currently and intentionally FAILS every real fdc cycle, because
+# EQquasi's own fault.r.nc still has the upstream velocity-convention bug
+# (see check_handover.py's KNOWN_BUG_MSG / compset READMEs) -- that is not a
+# bug in this check.
+python3 check_handover.py --direction eqquasi_to_eqdyna \\
+  --file "$d"/fault.r.nc --params-dir "$d"
 cd "$d" && bash run.sh
 test -e fault.dyna.r.nc
 """

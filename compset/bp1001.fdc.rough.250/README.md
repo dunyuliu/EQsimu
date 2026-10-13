@@ -32,8 +32,27 @@ cd runs/bp1001 && ./case.setup && ./case.submit
 Not yet run with the pinned codes. After a run, add the slip-rate and slip
 history plots here.
 
+## Handover checker
+
+`utils/case.setup` runs `utils/check_handover.py` at every EQquasi<->EQdyna
+handover of this fdc chain, before the receiving code reads the file, and
+breaks the chain (nonzero exit) on any inconsistency. It currently and
+**intentionally** fails every real cycle's EQquasi-to-EQdyna handover
+(`fault.r.nc`), naming `vxm`/`vxs` (and `vym`/`vys`, `vzm`/`vzs`) as
+antisymmetric: EQquasi writes these as relative half slip rates (vm ~= -vs),
+an upstream EQquasi bug, not yet fixed (`PATHWAY_FORWARD.md` P2 row;
+project-owner decision 2026-10-12 that EQdyna's absolute-particle-velocity
+convention is the correct one). **This is a known-bad result the checker is
+supposed to produce, not a checker bug** -- do not "fix" the checker to pass
+it. The EQdyna-to-EQquasi direction (`fault.dyna.r.nc`) passes. Confirmed
+against this compset's own real cycle-0 handover files: `fault.dyna.r.nc`
+passes, `fault.r.nc` fails naming `vxm`/`vxs` at fault 1, node (strike=1,
+dip=1).
+
 ## Known issues
 
+- The handover checker's EQquasi-to-EQdyna FAIL above (upstream velocity
+  convention), until EQquasi is fixed upstream.
 - The surface both codes get is built by `utils/roughness.py`: the heights
   are EQquasi's, padded as EQquasi itself pads them, and the slopes are
   recomputed from the heights. The original file had zero slopes on its four
