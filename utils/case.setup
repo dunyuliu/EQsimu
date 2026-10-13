@@ -1,75 +1,132 @@
 #! /usr/bin/env python3
 """
-Script to prepare the case for cycles.
-It loads user_defined_params.py, which defines the starting and ending IDs of earthquake cycle queue.
+Set up a fully dynamic cycle (fdc) case and write exe.sh, the chain of
+dependent jobs that case.submit runs: per cycle, one EQquasi job, then one
+EQdyna job.
+
+Each job runs its code's own run.sh. EQsimu passes only the restart files:
+  cycle k EQdyna  reads eqquasi/result/cycle<k-1>/fault.r.nc (end of interseismic)
+  cycle k EQquasi reads eqdyna/result/cycle<k-2>/fault.dyna.r.nc (end of rupture)
+EQquasi keeps its outputs in eqquasi/result/cycle<k-1>/; each EQdyna cycle
+runs in eqdyna/result/cycle<k-1>/, a copy of the eqdyna/ case files.
+
+The case was created for one machine (create.newcase's --machine, recorded in
+machine.txt). A scheduler machine (utils/machines.py: scheduler="slurm")
+sbatches each cycle's batch.<code>.hpc, chained with --dependency=afterok. A
+machine with no scheduler (scheduler=None, e.g. "local") instead runs each
+batch.<code>.hpc directly with bash, in order, under this script's own
+set -e -- no sbatch anywhere.
 """
-import os
-from user_defined_params import *
+import re
+import subprocess
+import sys
 
-def prepare_eqdyna():
-  # prepare_eqdyna will run case.setup in the dir eqdyna and move relevant files to the root directory of this case.
-  os.system("cd eqdyna && ./case.setup && cd ..")
-  # copy and paste relevant files from /eqdyna to the case root directory.
-  # put these cp commands in batch.cycle.hpc.
-  os.system("cp -r eqdyna/batch.cycle.eqdyna.hpc ./")
-  #os.system("cp -r eqdyna/bFaultGeometry.txt ./")
-  #os.system("cp -r eqdyna/bGlobal.txt ./")
-  #os.system("cp -r eqdyna/bMaterial.txt ./")
-  #os.system("cp -r eqdyna/bModelGeometry.txt ./")
-  #os.system("cp -r eqdyna/bStations.txt ./")
-  # still need on_fault_vars_input.nc. But it has the same name as that in eqquasi. Need to change. 
-  
-def prepare_eqquasi():
-  # prepare_eqquasi will run case.setup in the dir eqquasi and move relevant files to the root directory of this case.
-  os.system("cd eqquasi && ./case.setup && cd ..")
-  # copy and paste relevant files from /eqquasi to the case root directory.
-  os.system("cp -r eqquasi/batch.cycle.eqquasi.hpc ./")
-  #os.system("cp -r eqquasi/model.txt ./")
-  #os.system("cp -r eqquasi/stations.txt ./")
-  #os.system("cp -r eqquasi/on_fault_vars_input.nc ./")
+sys.dont_write_bytecode = True
+from user_defined_params import par
+from machines import machine
 
-def create_exe_shell():
-  with open("exe.sh","w") as f:
-    # loop over all the cycles required.
-    for cid in range(iend-istart+1):
-      if cid == 0:
-        f.write("jobid=$(sbatch batch.cycle.eqquasi.hpc)"  + "\n")
-      else:
-        f.write("jobid=$(sbatch --dependency=afterok:${jobid##* } batch.cycle.eqquasi.hpc)"  + "\n")
-      f.write("echo $jobid" + "\n")
-      f.write("jobid=$(sbatch --dependency=afterok:${jobid##* } batch.cycle.eqdyna.hpc)"  + "\n")
-      f.write("echo $jobid" + "\n")
 
-def create_exe_shell_old():
-  with open("exe.sh","w") as f:
-    # set up individual components.
-    f.write("cd eqquasi && ./case.setup && cd .."  + "\n")
-    f.write("cd eqdyna  && ./case.setup && cd .."  + "\n")
-  
-    f.write("cp currentcycle.txt ./eqquasi"  + "\n")
-    f.write("cp currentcycle.txt ./eqdyna"  + "\n")
-    
-    # run the 1st non-dynamic component.
-    f.write("cd eqquasi && jobid=$(sbatch batch.cycle.hpc) && cd .."  + "\n")  
-    f.write("echo $jobid" + "\n") # show job submission info.
-    # loop over all the cycles required.
-    for cid in range(iend-istart):
-        f.write("cd eqdyna  && jobid=$(sbatch --dependency=afterok:${jobid##* } batch.cycle.hpc) && cd .."  + "\n")
-        f.write("echo $jobid" + "\n")
-        f.write("cd eqquasi && jobid=$(sbatch --dependency=afterok:${jobid##* } batch.cycle.hpc) && cd .."  + "\n")
-        f.write("echo $jobid" + "\n")
-    # run the last dynamic component.
-    f.write("cd eqdyna && jobid=$(sbatch --dependency=afterok:${jobid##* } batch.cycle.hpc) && cd .."   + "\n")
-    f.write("echo $jobid" + "\n")
+def read_machine():
+    with open("machine.txt") as f:
+        return f.read().strip()
 
-def _main_func(description): 
-    with open("currentcycle.txt", "w") as f:
-        f.write(str(istart))
-    # Only create currentcycle.txt at the start of job submission.
-    # In later cycles, batch.cycle.hpc in ./eqdyna will increase the cycle id by 1 after each successful cycle. 
-    prepare_eqdyna()
-    prepare_eqquasi()
-    create_exe_shell()
+
+def prepare(code):
+    subprocess.run([sys.executable, "case.setup"], cwd=code, check=True)
+
+
+def header(code):
+    """The scheduler header and environment lines of code's own batch.hpc."""
+    keep = ("#", "module ", "export ")
+    with open(f"{code}/batch.hpc") as f:
+        return [l.rstrip("\n") for l in f if l.lstrip().startswith(keep)]
+
+
+def replace_once(text, pattern, new, where):
+    text, n = re.subn(pattern, lambda m: new, text)
+    if n != 1:
+        raise SystemExit(f"case.setup: expected one '{pattern}' in {where}; "
+                         f"EQquasi's run.sh changed, update utils/case.setup")
+    return text
+
+
+def eqquasi_run_cycle():
+    """eqquasi/run.cycle.sh: EQquasi's run.sh for the one cycle $CYCLE,
+    restarting from $RESTART_DIR instead of its own previous cycle."""
+    with open("eqquasi/run.sh") as f:
+        text = f.read()
+    text = replace_once(text, r"for i in \$\(seq \d+ \d+\);",
+                        "for i in ${CYCLE:?};", "eqquasi/run.sh")
+    text = replace_once(text, re.escape('prev="result/cycle$((i-2))"'),
+                        'prev="${RESTART_DIR:?}"', "eqquasi/run.sh")
+    with open("eqquasi/run.cycle.sh", "w") as f:
+        f.write(text)
+
+
+EQQUASI_BODY = """\
+set -e
+k=$((CYCLE-1))
+rm -rf eqquasi/restart && mkdir eqquasi/restart
+if [ "$CYCLE" -gt 1 ]; then
+  cp "eqdyna/result/cycle$((k-1))/fault.dyna.r.nc" eqquasi/restart/fault.r.nc
+  # PATHWAY_FORWARD.md owner decision 2026-10-12: eqsimu checks transfer
+  # files at every handover and breaks on any inconsistency -- never a
+  # silent warning. Checks the EQdyna-to-EQquasi handover before EQquasi
+  # reads it.
+  python3 check_handover.py --direction eqdyna_to_eqquasi \\
+    --file eqquasi/restart/fault.r.nc --params-dir eqquasi
+fi
+cd eqquasi && CYCLE=$CYCLE RESTART_DIR=restart bash run.cycle.sh
+test -e "result/cycle$k/fault.r.nc"
+"""
+
+EQDYNA_BODY = """\
+set -e
+k=$((CYCLE-1))
+d="eqdyna/result/cycle$k"
+rm -rf "$d" && mkdir -p "$d"
+find eqdyna -maxdepth 1 -type f -exec cp {} "$d"/ \\;
+cp "eqquasi/result/cycle$k/fault.r.nc" "$d"/
+# PATHWAY_FORWARD.md owner decision 2026-10-12: eqsimu checks transfer files
+# at every handover and breaks on any inconsistency -- never a silent
+# warning. Checks the EQquasi-to-EQdyna handover before EQdyna reads it.
+python3 check_handover.py --direction eqquasi_to_eqdyna \\
+  --file "$d"/fault.r.nc --params-dir "$d"
+cd "$d" && bash run.sh
+test -e fault.dyna.r.nc
+"""
+
+
+def write_batch(code, body):
+    with open(f"batch.{code}.hpc", "w") as f:
+        f.write("\n".join(header(code)) + "\n" + body)
+
+
+def create_exe_shell(scheduler):
+    with open("exe.sh", "w") as f:
+        f.write("set -e\n")
+        for cycle in range(par.istart, par.iend + 1):
+            if scheduler == "slurm":
+                dep = "" if cycle == par.istart else "--dependency=afterok:$jd "
+                f.write(f"jq=$(sbatch --parsable {dep}--export=ALL,CYCLE={cycle} "
+                        f"batch.eqquasi.hpc)\n")
+                f.write(f"jd=$(sbatch --parsable --dependency=afterok:$jq "
+                        f"--export=ALL,CYCLE={cycle} batch.eqdyna.hpc)\n")
+                f.write(f'echo "cycle {cycle}: EQquasi $jq, EQdyna $jd"\n')
+            else:
+                # No scheduler (utils/machines.py: scheduler=None): no job to
+                # queue, so run each cycle's body directly -- this script's
+                # own `set -e` (not sbatch's --dependency=afterok) is what
+                # stops the chain on a failed cycle.
+                f.write(f"CYCLE={cycle} bash batch.eqquasi.hpc\n")
+                f.write(f"CYCLE={cycle} bash batch.eqdyna.hpc\n")
+                f.write(f'echo "cycle {cycle}: EQquasi, EQdyna (direct, no scheduler)"\n')
+
 
 if __name__ == "__main__":
-    _main_func(__doc__)
+    prepare("eqdyna")
+    prepare("eqquasi")
+    eqquasi_run_cycle()
+    write_batch("eqquasi", EQQUASI_BODY)
+    write_batch("eqdyna", EQDYNA_BODY)
+    create_exe_shell(machine(read_machine())["scheduler"])
