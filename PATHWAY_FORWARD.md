@@ -40,6 +40,10 @@
 - 2026-10-13, on non-compressive effective normal stress (asked: clamp to 0
   in both codes, stop in both, or a shared input): **"Clamp to 0 in both
   (Recommended)"**.
+- 2026-10-13, on the normal-stress caps mismatch (`test.stepover.2fault`
+  turns EQquasi's caps on, while EQdyna caps only when `insertFaultType>0`
+  and `C_elastic==1`, so not on this planar case; asked: a) caps off in the
+  compset, b) keep caps on and report to EQdyna, c) both): **"2b"**.
 
 | Priority | Item | Command | Last checked |
 |---|---|---|---|
