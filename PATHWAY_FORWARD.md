@@ -55,6 +55,11 @@
   **"update the check"**. Read as: EQquasi's velocities are valid; the
   handover check compares only |v_m − v_s| with slip_rate (option 1d), and
   "go" also takes 4b (ask EQdyna to stop at sigma_bar >= 0, as EQquasi does).
+- 2026-10-13, on PRs and releases (after the redesign sat on a side branch
+  with a draft PR and no release): **"I mean pr should be going to EQsimu
+  and get updated quicker"**, **"Releases more often"**, **"A branch stayed
+  finite"**. Read as: PRs to `main`, short-lived branches, a release per
+  landed surface.
 
 | Priority | Item | Command | Last checked |
 |---|---|---|---|

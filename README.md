@@ -13,6 +13,9 @@ codes read (`utils/roughness.py`). Each code then runs its own workflow.
 
 ## Install
 
+EQsimu's scripts need Python 3 with `numpy`, `scipy` and `netCDF4`
+(`matplotlib` for `utils/plot_problem.py`).
+
 ```
 ./checkout.sh -i ls6        # clone EQquasi + EQdyna at the commits in components.txt, build
 source checkout.sh          # set EQSIMUROOT, EQQUASIROOT, EQDYNAROOT, PATH
