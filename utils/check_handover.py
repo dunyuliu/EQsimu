@@ -45,23 +45,13 @@ REQUIRED_VARS = {
 }
 VELOCITY_PAIRS = [("vxm", "vxs"), ("vym", "vys"), ("vzm", "vzs")]
 
-# Below this, a pair (vm, vs) is antisymmetric (vm ~= -vs): EQquasi's known
-# bug (PATHWAY_FORWARD.md P2 row, 2026-10-12 owner decision). Above it, the
-# pair is consistent with absolute particle velocities (vm ~= vs), which is
-# what EQdyna writes and what the project owner says is correct. Measured on
-# real bp1001.fdc.rough.250 cycle-0 output: EQquasi's median relative
-# residual is ~0.005-0.03, EQdyna's is ~2.0 -- 0.5 sits cleanly between them.
-ANTISYM_MEDIAN_THRESHOLD = 0.5
-
-KNOWN_BUG_MSG = (
-    "This is the INTENDED, KNOWN-BAD result, not a checker bug: EQdyna "
-    "writes absolute particle velocities (correct, per project-owner "
-    "decision 2026-10-12); EQquasi currently writes vxm..vzs as "
-    "antisymmetric relative half slip rates (vxm ~= -vxs etc), an upstream "
-    "EQquasi bug not yet fixed (PATHWAY_FORWARD.md P2 row). This checker "
-    "MUST fail on EQquasi's output for this reason until EQquasi is fixed "
-    "upstream -- do not 'fix' the checker to pass this case."
-)
+# The two codes split a node pair's motion differently: EQdyna integrates
+# each side's own momentum, so the pair also moves together; EQquasi is
+# quasi-static, has no momentum, and splits the slip rate by mass (zero
+# net motion). Both must agree on the relative part: |v_m - v_s| equals
+# slip_rate. Measured on real handover files: EQquasi's median ratio is 1
+# (5th-95th percentile 0.97-1.02 on bp1001.fdc.rough.1000 cycle 0).
+REL_SLIP_TOL = 0.05
 
 
 class HandoverError(SystemExit):
@@ -255,38 +245,31 @@ def check_slip_rate_sign(ds, path, mask, ntotft):
             f">= 0")
 
 
-def check_velocity_convention(ds, path, mask, ntotft, direction):
-    """EQdyna writes absolute particle velocities (vm, vs independent,
-    typically vm ~= vs on a locked/creeping node); EQquasi currently writes
-    antisymmetric relative half slip rates (vm ~= -vs). Detect which by the
-    median relative residual |vm+vs| / max(|vm|,|vs|) over real, slipping
-    nodes -- ~0 for the antisymmetric (buggy) convention, ~2 for the
-    absolute (correct) one. See ANTISYM_MEDIAN_THRESHOLD's docstring for the
-    measured values this threshold sits between."""
+def check_relative_velocity(ds, path, mask, ntotft):
+    """|v_m - v_s| must equal slip_rate on real slipping nodes (median
+    |ratio - 1| <= REL_SLIP_TOL). EQdyna sets its fault nodes' initial
+    velocities from vxm..vzs (eqdyna3d.f90 init_vel), so a pair that does
+    not carry the handed-over slip rate starts the rupture from the wrong
+    state. The common motion of the pair is not checked: it is zero from
+    EQquasi by construction."""
     sr = as_3d(ds, "slip_rate", ntotft)
-    slipping = mask & (sr > 1e-12)
-    use_mask = slipping if slipping.any() else mask
-    for vm_name, vs_name in VELOCITY_PAIRS:
-        vm = as_3d(ds, vm_name, ntotft)
-        vs = as_3d(ds, vs_name, ntotft)
-        denom = np.maximum(np.abs(vm), np.abs(vs))
-        denom = np.where(denom < 1e-12, 1.0, denom)
-        rel = np.abs(vm + vs) / denom
-        sample = rel[use_mask]
-        if sample.size == 0:
-            continue
-        med = float(np.median(sample))
-        if med < ANTISYM_MEDIAN_THRESHOLD:
-            # Most-antisymmetric real node, for the error message.
-            rel_full = np.where(use_mask, rel, np.inf)
-            ift, j, i = np.argwhere(rel_full == rel_full.min())[0]
-            raise HandoverError(
-                f"{path}: '{vm_name}'/'{vs_name}' are antisymmetric "
-                f"(median relative residual {med:.4g} over real slipping "
-                f"nodes; {vm_name}={vm[ift, j, i]!r}, "
-                f"{vs_name}={vs[ift, j, i]!r} at fault {ift + 1}, node "
-                f"(strike={i + 1}, dip={j + 1})), not absolute particle "
-                f"velocities. {KNOWN_BUG_MSG}")
+    vm = np.stack([as_3d(ds, m, ntotft) for m, _ in VELOCITY_PAIRS])
+    vs = np.stack([as_3d(ds, s, ntotft) for _, s in VELOCITY_PAIRS])
+    use = mask & (sr > 1e-12)
+    if not use.any():
+        return
+    ratio = np.linalg.norm(vm - vs, axis=0) / np.where(use, sr, 1.0)
+    dev = np.where(use, np.abs(ratio - 1.0), -1.0)
+    med = float(np.median(dev[use]))
+    if med > REL_SLIP_TOL:
+        ift, j, i = np.argwhere(dev == dev.max())[0]
+        raise HandoverError(
+            f"{path}: |v_m - v_s| does not match slip_rate (median "
+            f"|ratio - 1| = {med:.4g} over real slipping nodes, tolerance "
+            f"{REL_SLIP_TOL}; worst at fault {ift + 1}, node "
+            f"(strike={i + 1}, dip={j + 1}): |v_m - v_s| = "
+            f"{ratio[ift, j, i] * sr[ift, j, i]!r}, slip_rate = "
+            f"{sr[ift, j, i]!r})")
 
 
 def check_fric_pc_l(par):
@@ -338,14 +321,18 @@ def main(argv=None):
         check_finite(ds, path, mask, ntotft)
         check_normal_stress(ds, path, mask, ntotft)
         check_slip_rate_sign(ds, path, mask, ntotft)
-        check_velocity_convention(ds, path, mask, ntotft, args.direction)
+        # EQquasi reads vxm..vzs but never uses them (faulting.f90 only
+        # overwrites them), so only EQdyna's input is checked.
+        if args.direction == "eqquasi_to_eqdyna":
+            check_relative_velocity(ds, path, mask, ntotft)
     finally:
         ds.close()
 
     print(f"check_handover.py: OK: {path} ({args.direction}, "
           f"ntotft={ntotft}, {len(REQUIRED_VARS)} vars, all real nodes "
-          f"finite, effective_normal<0, slip_rate>=0, absolute-velocity "
-          f"convention)")
+          f"finite, effective_normal<0, slip_rate>=0"
+          + (", |v_m-v_s|=slip_rate" if args.direction == "eqquasi_to_eqdyna"
+             else "") + ")")
     return 0
 
 

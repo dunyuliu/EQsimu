@@ -8,11 +8,12 @@ script, not by a pytest suite).
 Builds a tiny synthetic 1-fault case (its own minimal user_defined_params.py,
 independent of the pinned EQquasi/EQdyna checkouts) and three handover
 files:
-  good.nc     -- passes every check (absolute-velocity convention, sigma<0,
-                 all finite)
+  good.nc     -- passes every check (|v_m - v_s| = slip_rate, sigma<0,
+                 all finite), in both directions
   bad_sigma.nc -- one real node has effective_normal >= 0 (not compressive)
   bad_missing.nc -- missing the 'vzs' variable entirely
   bad_nan.nc  -- one real node has slip_rate = NaN
+  bad_vel.nc  -- v_m == v_s, so |v_m - v_s| != slip_rate (EQquasi to EQdyna)
 
 Run: python3 utils/test_check_handover.py
 Exits 0 if check_handover.py passes good.nc and fails each bad_*.nc for the
@@ -68,16 +69,18 @@ def write_nc(path, corrupt=None):
             arr[:] = -25.0e6   # compressive, as this project's compsets use
         elif v == "slip_rate":
             arr[:] = 1.0e-3
-        elif v in ("vxm", "vxs", "vym", "vys", "vzm", "vzs"):
-            # absolute particle velocity: vm == vs (not vm == -vs), and
-            # nonzero so the antisymmetry residual isn't a 0/eps degenerate
-            arr[:] = 2.0e-4
+        elif v == "vxm":
+            arr[:] = 0.5e-3    # mass-split slip rate, equal masses
+        elif v == "vxs":
+            arr[:] = -0.5e-3
         data[v] = arr
 
     if corrupt == "sigma":
         data["effective_normal"][2, 3] = 1.0e6   # positive: not compressive
     elif corrupt == "nan":
         data["slip_rate"][1, 2] = float("nan")
+    elif corrupt == "vel":
+        data["vxs"][:] = data["vxm"]
     # "missing" is handled below by skipping a variable's creation entirely.
 
     for v in REQUIRED_VARS:
@@ -89,9 +92,9 @@ def write_nc(path, corrupt=None):
     ds.close()
 
 
-def run_checker(nc_path, params_dir):
+def run_checker(nc_path, params_dir, direction="eqdyna_to_eqquasi"):
     return subprocess.run(
-        [sys.executable, CHECKER, "--direction", "eqdyna_to_eqquasi",
+        [sys.executable, CHECKER, "--direction", direction,
          "--file", nc_path, "--params-dir", params_dir],
         capture_output=True, text=True)
 
@@ -106,12 +109,13 @@ def main():
 
         good = os.path.join(tmp, "good.nc")
         write_nc(good)
-        r = run_checker(good, tmp)
-        if r.returncode != 0:
-            failures.append(f"good.nc: expected exit 0, got {r.returncode}\n"
-                             f"{r.stdout}\n{r.stderr}")
-        else:
-            print("PASS: good.nc exits 0 ->", r.stdout.strip())
+        for direction in ("eqdyna_to_eqquasi", "eqquasi_to_eqdyna"):
+            r = run_checker(good, tmp, direction)
+            if r.returncode != 0:
+                failures.append(f"good.nc ({direction}): expected exit 0, "
+                                 f"got {r.returncode}\n{r.stdout}\n{r.stderr}")
+            else:
+                print("PASS: good.nc exits 0 ->", r.stdout.strip())
 
         cases = [
             ("bad_sigma", "sigma", ["effective_normal", "fault 1",
@@ -119,11 +123,12 @@ def main():
             ("bad_missing", "missing", ["vzs", "missing"]),
             ("bad_nan", "nan", ["slip_rate", "non-finite", "fault 1",
                                  "strike=3, dip=2"]),
+            ("bad_vel", "vel", ["|v_m - v_s|", "slip_rate", "fault 1"]),
         ]
         for name, corrupt, must_name in cases:
             path = os.path.join(tmp, name + ".nc")
             write_nc(path, corrupt=corrupt)
-            r = run_checker(path, tmp)
+            r = run_checker(path, tmp, "eqquasi_to_eqdyna")
             if r.returncode == 0:
                 failures.append(f"{name}.nc: expected nonzero exit, got 0\n"
                                  f"{r.stdout}")

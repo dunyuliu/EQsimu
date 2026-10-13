@@ -39,25 +39,8 @@ Two cycles run locally with the pinned codes (`--machine local`, 6 ranks,
 EQdyna's `fault.dyna.r.nc` and reaches the next rupture after 198 years.
 No physical comparison against the 250 m case or the SEAS results yet.
 
-## Handover checker
-
-`utils/case.setup` runs `utils/check_handover.py` at every EQquasi<->EQdyna
-handover of this fdc chain, before the receiving code reads the file, and
-breaks the chain (nonzero exit) on any inconsistency. It currently and
-**intentionally** fails every real cycle's EQquasi-to-EQdyna handover
-(`fault.r.nc`), naming `vxm`/`vxs` (and `vym`/`vys`, `vzm`/`vzs`) as
-antisymmetric: EQquasi writes these as relative half slip rates (vm ~= -vs),
-an upstream EQquasi bug, not yet fixed (`PATHWAY_FORWARD.md` P2 row;
-project-owner decision 2026-10-12 that EQdyna's absolute-particle-velocity
-convention is the correct one). **This is a known-bad result the checker is
-supposed to produce, not a checker bug** -- do not "fix" the checker to pass
-it. The EQdyna-to-EQquasi direction (`fault.dyna.r.nc`) passes. (The two
-local cycles reported above ran before this checker existed.)
-
 ## Known issues
 
-- The handover checker's EQquasi-to-EQdyna FAIL above (upstream velocity
-  convention), until EQquasi is fixed upstream.
 - EQdyna writes no `faultst*` file for the 7 on-fault stations at 7.5 km
   depth (it warns at startup): 7.5 km is not a node of the 1 km grid. The
   station set is kept the same as `bp1001.fdc.rough.250`'s, so the two
