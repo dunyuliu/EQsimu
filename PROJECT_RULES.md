@@ -9,6 +9,7 @@ Index:
 6. A living status board
 7. A problem is defined once, in `compset/`
 8. `convert.py` changes are verified by importing every generated compset
+9. Cite upstream line numbers against the pinned commit, never the ambient checkout
 
 ---
 
@@ -95,3 +96,23 @@ then `python3 -c "from user_defined_params import par"` against the generated
 file, with `EQQUASIROOT`/`EQDYNAROOT` pointed at the pinned checkouts. A
 derived-output check (geometry file, plot) is in addition to this, never
 instead of it.
+
+## 9. Cite upstream line numbers against the pinned commit, never the ambient checkout
+
+When citing a `file:line` in EQdyna, EQquasi, or SORD, resolve it with
+`git show <pin>:<path>` against the commit recorded in `components.txt`, not
+whatever a local clone's working tree happens to have checked out — a local
+checkout can sit ahead of the pin with no warning from `git status` or
+`xmlquery`-style tools, since the pin is a fact about `components.txt`, not
+about the clone.
+
+**Rationale**: an audit of the positive-sigma handling first read line numbers
+from a local EQdyna checkout that had drifted past the `components.txt` pin
+(`42ce254085abad7a85c803b0b8dc1a7c33c5a261`); the lines it almost cited did not
+match what the pinned commit actually contains, and an upstream report nearly
+went out scoped to the wrong code (2026-10-12).
+
+**How to apply**: before citing a line, run `git show <pin>:<path>` (or read a
+fresh clone checked out to the pin) and quote from that output — a working
+tree's `HEAD` is not evidence until its SHA is checked against
+`components.txt`.
