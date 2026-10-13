@@ -40,6 +40,21 @@
 - 2026-10-13, on non-compressive effective normal stress (asked: clamp to 0
   in both codes, stop in both, or a shared input): **"Clamp to 0 in both
   (Recommended)"**.
+- 2026-10-13, on the normal-stress caps mismatch (`test.stepover.2fault`
+  turns EQquasi's caps on, while EQdyna caps only when `insertFaultType>0`
+  and `C_elastic==1`, so not on this planar case; asked: a) caps off in the
+  compset, b) keep caps on and report to EQdyna, c) both): **"2b"**.
+- 2026-10-13, on the pins (current `components.txt` heads, EQquasi
+  `524a5236` / EQdyna `42ce254`, or the commits nearest the 2020 paper,
+  EQquasi `66958e3` / EQdyna `0381248`): **"current. let's reproduce
+  later"**.
+- 2026-10-13, on the restart velocities, after reading how each code
+  builds them (EQdyna integrates each side's momentum; EQquasi, quasi-static,
+  splits the slip rate by mass): **"eqquasi moment is 0."**, **"so particle
+  vel depends on mass"**, **"and they split the slip"**, then **"go"** and
+  **"update the check"**. Read as: EQquasi's velocities are valid; the
+  handover check compares only |v_m − v_s| with slip_rate (option 1d), and
+  "go" also takes 4b (ask EQdyna to stop at sigma_bar >= 0, as EQquasi does).
 
 | Priority | Item | Command | Last checked |
 |---|---|---|---|
