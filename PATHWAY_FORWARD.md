@@ -48,6 +48,13 @@
   `524a5236` / EQdyna `42ce254`, or the commits nearest the 2020 paper,
   EQquasi `66958e3` / EQdyna `0381248`): **"current. let's reproduce
   later"**.
+- 2026-10-13, on the restart velocities, after reading how each code
+  builds them (EQdyna integrates each side's momentum; EQquasi, quasi-static,
+  splits the slip rate by mass): **"eqquasi moment is 0."**, **"so particle
+  vel depends on mass"**, **"and they split the slip"**, then **"go"** and
+  **"update the check"**. Read as: EQquasi's velocities are valid; the
+  handover check compares only |v_m − v_s| with slip_rate (option 1d), and
+  "go" also takes 4b (ask EQdyna to stop at sigma_bar >= 0, as EQquasi does).
 
 | Priority | Item | Command | Last checked |
 |---|---|---|---|
