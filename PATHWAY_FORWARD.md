@@ -44,6 +44,10 @@
   turns EQquasi's caps on, while EQdyna caps only when `insertFaultType>0`
   and `C_elastic==1`, so not on this planar case; asked: a) caps off in the
   compset, b) keep caps on and report to EQdyna, c) both): **"2b"**.
+- 2026-10-13, on the pins (current `components.txt` heads, EQquasi
+  `524a5236` / EQdyna `42ce254`, or the commits nearest the 2020 paper,
+  EQquasi `66958e3` / EQdyna `0381248`): **"current. let's reproduce
+  later"**.
 
 | Priority | Item | Command | Last checked |
 |---|---|---|---|
