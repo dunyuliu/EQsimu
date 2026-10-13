@@ -29,7 +29,8 @@ conda env (owner decision on the board, 2026-10-10).
 ## Checks before changing convert.py
 
 - The EQquasi output must match that code's own compset `par` exactly
-  (bp1001: all attributes and `on_fault_vars` equal; `xcoor` is a loop leftover).
+  (bp1001: all attributes and `on_fault_vars` equal; `xcoor` is a loop leftover),
+  except `fric_pc_L`, which EQsimu sets to Dc to match EQdyna (2026-10-12).
 - `create.newcase fdc` then `./case.setup` must run with the pinned codes.
 - `roughness.fractal_surface` must equal EQdyna's
   `generateFaultInterface:generateFractalSurface` bitwise for the same seed.
