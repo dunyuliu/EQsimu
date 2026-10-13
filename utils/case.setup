@@ -90,10 +90,6 @@ cp "eqquasi/result/cycle$k/fault.r.nc" "$d"/
 # PATHWAY_FORWARD.md owner decision 2026-10-12: eqsimu checks transfer files
 # at every handover and breaks on any inconsistency -- never a silent
 # warning. Checks the EQquasi-to-EQdyna handover before EQdyna reads it.
-# NOTE: this currently and intentionally FAILS every real fdc cycle, because
-# EQquasi's own fault.r.nc still has the upstream velocity-convention bug
-# (see check_handover.py's KNOWN_BUG_MSG / compset READMEs) -- that is not a
-# bug in this check.
 python3 check_handover.py --direction eqquasi_to_eqdyna \\
   --file "$d"/fault.r.nc --params-dir "$d"
 cd "$d" && bash run.sh
