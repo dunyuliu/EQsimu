@@ -381,6 +381,8 @@ def write_code_compset(compset_dir, code, out_dir, machine):
 
 
 def upstream_compset_arg(code, out_dir):
-    """The compset argument that makes code's create.newcase read out_dir."""
+    """The compset argument that makes code's create.newcase read out_dir.
+    Resolved paths: the kernel follows '..' from a symlink's target, so a
+    relpath taken through a symlinked root would point elsewhere."""
     base = os.path.join(os.environ[ROOT_ENV[code]], COMPSET_DIR[code])
-    return os.path.relpath(out_dir, base)
+    return os.path.relpath(os.path.realpath(out_dir), os.path.realpath(base))
