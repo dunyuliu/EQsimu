@@ -37,6 +37,9 @@
   warn, or investigate first): **"Particle vel should be right."**; on adding
   the `fric_pc_L` exception to `CLAUDE.md`'s parity check: **"Yes, add it
   (Recommended)"**, then **"But should keep in board that this needs fix"**.
+- 2026-10-13, on non-compressive effective normal stress (asked: clamp to 0
+  in both codes, stop in both, or a shared input): **"Clamp to 0 in both
+  (Recommended)"**.
 
 | Priority | Item | Command | Last checked |
 |---|---|---|---|
