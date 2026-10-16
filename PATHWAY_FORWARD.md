@@ -65,14 +65,26 @@
   rule-8 check, `convert.py` passing the same `fric_pc_L` and caps to both
   codes, board update and release): **"upstream updated and you can move
   forward?"**, then **"/autopilot march on"**. Read as: go, to the current
-  EQdyna head.
+  EQdyna head. Landed: pin -> `29774c3` (head at bump time; commits
+  `46ee862`..`29774c3` are board/docs/testsys only, EQdyna PRs #213-#216),
+  `C_normal_stress_caps` moved into `utils/convert.py`'s shared `COMMON` so
+  both codes get the same value (was EQquasi-only), rule 8 green for all 3
+  compsets x both codes. `fric_pc_L` was already effectively shared (see P2
+  row); no further convert.py change needed there.
 
 | Priority | Item | Command | Last checked |
 |---|---|---|---|
-| P1 | Non-compressive effective normal stress (sigma_bar >= 0): EQquasi stops on purpose (`check_effective_normal`, `STOP 508`; its old clamp-to-zero gave NaN from the Newton solve), EQdyna clamps to 0 silently on every geometry (`src/fortran/faulting.f90:224-225` at the pin). The owner's 2026-10-13 "clamp to 0 in both" would undo EQquasi's fix, so it was taken as asking EQdyna to stop like EQquasi: https://github.com/EQDYNA/EQdyna/issues/201. Related caps report: https://github.com/EQDYNA/EQdyna/issues/200. Both fixed upstream by https://github.com/EQDYNA/EQdyna/pull/210 (master `46ee862`, 2026-10-14): EQdyna stops for rate-and-state at sigma_bar >= 0, and the caps are an input (`C_normal_stress_caps`). EQsimu's pin `42ce254` predates it, so the silent clamp stands until the EQdyna pin moves (owner's call) | `gh pr view 210 -R EQDYNA/EQdyna --json state,mergeCommit` | 2026-10-15 |
+Closed 2026-10-15: non-compressive effective normal stress and the caps input
+(prior P1/P2 rows). EQdyna pin moved past `42ce254` to `29774c3` (PR #210,
+`46ee862`+): EQdyna now stops on `sigma_bar >= 0`
+(`stopNonCompressiveNormal`, `src/fortran/faulting.f90:247`), like EQquasi's
+`check_effective_normal`/`STOP 508`. `C_normal_stress_caps` is now shared
+(`utils/convert.py`'s `COMMON`, was EQquasi-only); rule 8 confirms both codes
+read `C_normal_stress_caps = 1` for every compset
+(`bash rule8.sh <eqquasiroot> <eqdynaroot> <out>`).
 | P1 | fdc on ls6 never run; locally `bp1001.fdc.rough.1000` ran two cycles for real (rerun 2026-10-13 with `fric_pc_L = Dc`) (`eqquasi-petsc` env, EQquasi `eqquasi-1.21.2` = pin source, EQdyna built at the pin): each EQquasi phase ended by handing over to EQdyna, and cycle 2's EQquasi started at peak slip rate 4.65613e-3 m/s, equal to the maximum in cycle 1's `fault.dyna.r.nc`. BLOCKED(owner): ls6 needs an MFA session ("Later") | `create.newcase fdc t bp1001.fdc.rough.1000 --machine ls6 && cd t && ./case.setup && ./case.submit` | 2026-10-13 |
-| P2 | Normal-stress state-law length L: EQdyna hardwires L = Dc per node, EQquasi takes `fric_pc_L` (default 0), so EQquasi lost the lag EQdyna handed over and `test.stepover.2fault` cycle 2 stopped with `STOP 508`. EQsimu works around it (`utils/convert.py` sets EQquasi's `fric_pc_L = Dc`, PR #22; cycle 2 now runs). Upstream report https://github.com/EQDYNA/EQdyna/issues/189 was fixed by https://github.com/EQDYNA/EQdyna/pull/210 (master `46ee862`, 2026-10-14): EQdyna takes `par.fric_pc_L` (unset = per-node Dc, as before). The workaround stays until the EQdyna pin moves past `42ce254` (owner's call); then both codes get L from the problem. Left open upstream: EQdyna's explicit theta_pc update vs EQquasi's exponential one | `gh pr view 210 -R EQDYNA/EQdyna --json state,mergeCommit` | 2026-10-15 |
-| P2 | Pins in `components.txt` are recent heads (EQquasi 2026-10-09, EQdyna `42ce254` 2026-10-10), not the versions behind Liu et al. (2020): EQquasi's nearest-to-2020-12-31 commit is `66958e3` (2020-10-08), EQdyna's is `0381248` (2020-10-07) | `git -C components/eqquasi log --until=2020-12-31 -1` | 2026-10-12 |
+| P2 | Normal-stress state-law length L: EQsimu's `utils/convert.py` still sets EQquasi's `fric_pc_L = Dc` explicitly (PR #22 workaround; EQquasi's own default, 0.0, means "no state," unlike EQdyna's). EQdyna pin `29774c3` now takes `par.fric_pc_L` too (`None` default = per-node Dc, same value as EQquasi's override, so the two codes already agree in effect; verified bitwise-equal L is not). rule 8 (2026-10-15) shows `eqquasi fric_pc_L=0.14` (=Dc) and `eqdyna fric_pc_L=None` for every compset, the same L by construction (`_check_uniform_dc`). Left open upstream: EQdyna's explicit theta_pc update vs EQquasi's exponential one | `bash rule8.sh <eqquasiroot> <eqdynaroot> <out>` | 2026-10-15 |
+| P2 | Pins in `components.txt` are recent heads (EQquasi 2026-10-09, EQdyna `29774c3` 2026-10-15), not the versions behind Liu et al. (2020): EQquasi's nearest-to-2020-12-31 commit is `66958e3` (2020-10-08), EQdyna's is `0381248` (2020-10-07) | `git -C components/eqquasi log --until=2020-12-31 -1` | 2026-10-15 |
 | P3 | The 1 km low-pass (`roughness.resample`, Gaussian, 2 km cutoff) still passes about 37% amplitude at 2 km, the Nyquist wavelength of the 1 km grid; sharpen only if the owner asks | `grep -n "def resample" -A30 utils/roughness.py` | 2026-10-10 |
 | P3 | EQdyna's own `case_input/bp1001.fdc.rough.250` is in the flat pre-`par` format its `case.setup` no longer imports (0 matches for `par = parameters` in the pinned `42ce254` copy); report to EQdyna | `grep -c 'par = parameters' components/eqdyna/case_input/bp1001.fdc.rough.250/user_defined_params.py` | 2026-10-12 |
 | P3 | The liu2020 cases (`liu2020.fdc.planar`, `liu2020.fdc.rough.250` in both codes) are not yet EQsimu compsets | `ls compset` | 2026-10-10 |

@@ -23,7 +23,14 @@ COMMON = ["mode", "fxmin", "fxmax", "fzmin", "fzmax", "dx", "ntotft",
           "fric_rsf_a", "fric_rsf_b", "fric_rsf_Dc", "fric_rsf_deltaa",
           "fric_rsf_r0", "fric_rsf_v0", "nt_out",
           "xmin_trans", "xmax_trans", "zmin_trans", "ymin_trans", "ymax_trans",
-          "dx_trans"]
+          "dx_trans",
+          # Both codes now read this input identically (EQdyna pin >=
+          # 29774c3, PR #210): par.C_normal_stress_caps replaces EQdyna's
+          # old insertFaultType>0 && C_elastic==1 rule (par.eqdyna's -1
+          # default keeps that rule for any compset that doesn't set this).
+          # Rule 7: a parameter both codes read goes in the problem, not a
+          # per-code dict.
+          "C_normal_stress_caps"]
 SHARED = {"eqquasi": COMMON + ["istart", "iend"], "eqdyna": COMMON}
 
 # fault() keys -> on-fault array index in each code.
