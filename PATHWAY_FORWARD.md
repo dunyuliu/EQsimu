@@ -189,6 +189,14 @@
   `netcdf_io.f90:420-456` inside `netcdf_read_on_fault` (377-502), GNU
   Fortran 15.3.0 conda-forge, netCDF-Fortran 4.6.4 / netCDF-C 4.10.1).
 
+- 2026-10-16, closing the liu2020-compsets P3 row: re-ran `ls compset` on
+  current `main` (`da3b832`), confirms `liu2020.fdc.planar.300` and
+  `liu2020.fdc.rough.250` exist (landed PR #49, `e8b04d8`). Reads
+  MEASURED-and-done per that re-run, not VERIFIED/validated -- no
+  independent oracle exists for this problem, the same caveat the EQquasi
+  native compset files already carry ("gate: none -- UNVERIFIED (no
+  reference)").
+
 | Priority | Item | Command | Last checked |
 |---|---|---|---|
 | P1 | stepover fdc rerun (`test.stepover.2fault`, pins EQquasi `524a5236`/EQdyna `29774c3`): BLOCKED(upstream: EQquasi, filed as EQquasi issue #65) -- `netcdf_io.f90:netcdf_read_on_fault` (420-456) crashes (`NetCDF: Invalid dimension ID or name` + SIGSEGV) only when that file is compiled at the production `-O3`; isolated via hybrid-build bisection, not a file/library/env issue, source/uninitialized-variable/OOB causes ruled out this session (see 2026-10-16 entries above for the full recipe) | `MACHINE=conda-linux make FFLAGS="-fopenmp -ffree-line-length-none -O0 -g -fbacktrace -fcheck=all"` on `netcdf_io.f90` only, rerun case | 2026-10-16 |
@@ -197,7 +205,7 @@
 | P2 | Pins in `components.txt` are recent heads (EQquasi 2026-10-09, EQdyna `29774c3` 2026-10-15), not the versions behind Liu et al. (2020): EQquasi's nearest-to-2020-12-31 commit is `66958e3` (2020-10-08), EQdyna's is `0381248` (2020-10-07) | `git -C components/eqquasi log --until=2020-12-31 -1` | 2026-10-15 |
 | P3 | The 1 km low-pass (`roughness.resample`, Gaussian, 2 km cutoff) still passes about 37% amplitude at 2 km, the Nyquist wavelength of the 1 km grid; sharpen only if the owner asks | `grep -n "def resample" -A30 utils/roughness.py` | 2026-10-10 |
 | P3 | EQdyna's own `case_input/bp1001.fdc.rough.250` is in the flat pre-`par` format its `case.setup` no longer imports (0 matches for `par = parameters`, reconfirmed at the current pin `29774c3`); filed as EQdyna issue https://github.com/EQDYNA/EQdyna/issues/222 | `grep -c 'par = parameters' components/eqdyna/case_input/bp1001.fdc.rough.250/user_defined_params.py` | 2026-10-16 |
-| P3 | The liu2020 cases (`liu2020.fdc.planar`, `liu2020.fdc.rough.250` in both codes) are not yet EQsimu compsets | `ls compset` | 2026-10-10 |
 | P3 | `utils/case.setup` rewrites two lines of EQquasi's `run.sh` (cycle loop, restart source) into `run.cycle.sh`, and stops if either line changes upstream | `create.newcase fdc t bp1001.fdc.rough.250 && cd t && ./case.setup` | 2026-10-09 |
+| P3 | EQquasi's own `scripts/defaultParameters.py:296` hardcodes a personal `HPC_email` default that nothing in `utils/convert.py` or any compset overrides, so it leaks into every machine=`local` generated `user_defined_params.py` -- pre-existing across all already-merged compsets, not introduced by PR #49; EQsimu owns no solver code (rule 3), so this is upstream-report-only | `PYTHONPATH=<EQQUASIROOT>/scripts python3 -c "from user_defined_params import parameters; print(parameters().HPC_email)"` at pin `524a5236` | 2026-10-16 |
 
 Closed rows are in git history (`git log -p PATHWAY_FORWARD.md`).
