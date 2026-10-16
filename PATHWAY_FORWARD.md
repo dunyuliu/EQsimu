@@ -158,6 +158,23 @@
   file the EQquasi upstream report, after pinning the failing line and
   compiler versions; (2) run the stepover locally with only that file at
   `-O0`): **"1"**.
+- 2026-10-16, next workable row (`liu2020 compsets`, both P1s staying
+  BLOCKED): landed `liu2020.fdc.planar.300` and `liu2020.fdc.rough.250` as
+  EQsimu compsets (PR #49), reconciling EQdyna's and EQquasi's existing
+  native `liu2020.fdc.planar`/`liu2020.fdc.rough.250` case_input into one
+  canonical `problem()` each. `liu2020.fdc.rough.250`'s `par.init_norm =
+  -25.0e6` follows the precedent `bp1001.fdc.rough.250` already set for the
+  same EQdyna-vs-EQquasi sigma_n split (-50e6 vs -25e6) that rule 7's
+  rationale documents; `nt_out = 20` likewise follows that precedent (EQdyna's
+  value) over EQquasi's native 100. Verified independently of the dispatched
+  agent's report: rule 8 gate re-run fresh (both compsets x both codes,
+  pinned checkouts, all 4 writes + imports green), and the CLAUDE.md parity
+  check re-derived (`on_fault_vars` bit-identical to EQquasi's own native
+  compset `par` for both compsets; every remaining attribute diff accounted
+  for). Found and logged as a new P3 row, not fixed here (rule 3): EQquasi's
+  own `scripts/defaultParameters.py` hardcodes a personal `HPC_email`
+  default that leaks into every machine=`local` generated output, including
+  already-merged compsets -- pre-existing, not introduced by PR #49.
 - 2026-10-16, filed per the above: before filing, ruled out an obvious source
   bug -- `gfortran -Wall -Wextra -Wuninitialized` at `-O3` on `netcdf_io.f90`
   flags nothing inside `netcdf_read_on_fault` (its one `-Wmaybe-uninitialized`
