@@ -101,6 +101,26 @@
   the normal-stress-caps evidence are still open (see the two rows below).
   See `compset/test.stepover.2fault/README.md`'s Results section for the
   full command/error transcript.
+- 2026-10-15, second stepover-fdc-rerun attempt, same pins: fixed the build
+  by calling EQquasi's own `install.eqquasi.sh -m conda-linux` directly
+  (not `checkout.sh -i local`, which can't express a per-component mode) --
+  built in 5 s from the activated `eqquasi-petsc` env, no private MUMPS.
+  `EQDYNAROOT` pointed at a prebuilt EQdyna already at the pin. `create.newcase
+  fdc ... --machine local` and `./case.setup` both succeeded (caps confirmed
+  ON in `case.setup`'s own log). `./case.submit` then BLOCKED in cycle 0: a
+  new, different failure -- EQquasi's netcdf reader errors `NetCDF: Invalid
+  dimension ID or name` on `input/on_fault_vars_input.nc` and a rank
+  SIGSEGVs, before any rupture or handover. Read as an HDF5/netCDF
+  library-version mismatch between the `venv` Python (`netCDF4` 1.7.2) that
+  `create.newcase` used to write the file and the `eqquasi-petsc` conda
+  env's `netcdf-fortran` that EQquasi links against on this host -- the same
+  kind of file ran clean for 24,000+ steps on 2026-10-12, so this is
+  host/env-specific, not a re-opened EQsimu bug. Not chased further this
+  attempt. Still open: cycle-1/cycle-2 handover files,
+  `check_handover.py` on all three, and caps-application evidence from an
+  actual run (vs. the static `case.setup` confirmation that caps are
+  configured ON). See `compset/test.stepover.2fault/README.md` for the
+  full transcript.
 
 | Priority | Item | Command | Last checked |
 |---|---|---|---|
