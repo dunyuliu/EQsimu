@@ -158,10 +158,23 @@
   file the EQquasi upstream report, after pinning the failing line and
   compiler versions; (2) run the stepover locally with only that file at
   `-O0`): **"1"**.
+- 2026-10-16, filed per the above: before filing, ruled out an obvious source
+  bug -- `gfortran -Wall -Wextra -Wuninitialized` at `-O3` on `netcdf_io.f90`
+  flags nothing inside `netcdf_read_on_fault` (its one `-Wmaybe-uninitialized`
+  hit is in the unrelated `netcdf_write`); `-fcheck=all` at `-O3` (bounds/
+  pointer/recursion checks, no de-optimization) also does not fire, and a
+  hybrid build with `netcdf_io.o` at `-O3 -fcheck=all` runs the stepover case
+  400+ steps clean at full `-O3` speed, same as `-O2` (140+ steps clean) --
+  both weigh against a plain OOB write as the cause. Per-flag bisection
+  (`-fno-tree-vectorize` etc.) to pin the exact `-O3` sub-pass was not
+  finished this session. Filed as EQquasi issue
+  https://github.com/dunyuliu/EQquasi/issues/65 (pin `524a5236`,
+  `netcdf_io.f90:420-456` inside `netcdf_read_on_fault` (377-502), GNU
+  Fortran 15.3.0 conda-forge, netCDF-Fortran 4.6.4 / netCDF-C 4.10.1).
 
 | Priority | Item | Command | Last checked |
 |---|---|---|---|
-| P1 | stepover fdc rerun (`test.stepover.2fault`, pins EQquasi `524a5236`/EQdyna `29774c3`): BLOCKED(upstream: EQquasi) -- `netcdf_io.f90:netcdf_read_on_fault` crashes (`NetCDF: Invalid dimension ID or name` + SIGSEGV) only when that file is compiled at the production `-O3`; isolated via hybrid-build bisection, not a file/library/env issue (see 2026-10-16 entry above for the full recipe) | `MACHINE=conda-linux make FFLAGS="-fopenmp -ffree-line-length-none -O0 -g -fbacktrace -fcheck=all"` on `netcdf_io.f90` only, rerun case | 2026-10-16 |
+| P1 | stepover fdc rerun (`test.stepover.2fault`, pins EQquasi `524a5236`/EQdyna `29774c3`): BLOCKED(upstream: EQquasi, filed as EQquasi issue #65) -- `netcdf_io.f90:netcdf_read_on_fault` (420-456) crashes (`NetCDF: Invalid dimension ID or name` + SIGSEGV) only when that file is compiled at the production `-O3`; isolated via hybrid-build bisection, not a file/library/env issue, source/uninitialized-variable/OOB causes ruled out this session (see 2026-10-16 entries above for the full recipe) | `MACHINE=conda-linux make FFLAGS="-fopenmp -ffree-line-length-none -O0 -g -fbacktrace -fcheck=all"` on `netcdf_io.f90` only, rerun case | 2026-10-16 |
 | P1 | fdc on ls6 never run; locally `bp1001.fdc.rough.1000` ran two cycles for real (rerun 2026-10-13 with `fric_pc_L = Dc`) (`eqquasi-petsc` env, EQquasi `eqquasi-1.21.2` = pin source, EQdyna built at the pin): each EQquasi phase ended by handing over to EQdyna, and cycle 2's EQquasi started at peak slip rate 4.65613e-3 m/s, equal to the maximum in cycle 1's `fault.dyna.r.nc`. BLOCKED(owner): ls6 needs an MFA session ("Later") | `create.newcase fdc t bp1001.fdc.rough.1000 --machine ls6 && cd t && ./case.setup && ./case.submit` | 2026-10-13 |
 | P2 | Normal-stress state-law length L: both codes now get the same explicit `par.fric_pc_L = par.fric_rsf_Dc` from `utils/convert.py` (PR #41; EQdyna takes it since pin `29774c3`, EQdyna PR #210); `_check_uniform_dc` still guards a non-uniform Dc. Left open upstream: EQdyna updates theta_pc explicitly for L > 0, EQquasi exponentially | rule 8 recipe (`PROJECT_RULES.md` rule 8), then `grep fric_pc_L <out>/*/*/user_defined_params.py` | 2026-10-16 |
 | P2 | Pins in `components.txt` are recent heads (EQquasi 2026-10-09, EQdyna `29774c3` 2026-10-15), not the versions behind Liu et al. (2020): EQquasi's nearest-to-2020-12-31 commit is `66958e3` (2020-10-08), EQdyna's is `0381248` (2020-10-07) | `git -C components/eqquasi log --until=2020-12-31 -1` | 2026-10-15 |
