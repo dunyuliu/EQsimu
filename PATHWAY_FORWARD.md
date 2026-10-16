@@ -121,6 +121,39 @@
   actual run (vs. the static `case.setup` confirmation that caps are
   configured ON). See `compset/test.stepover.2fault/README.md` for the
   full transcript.
+- 2026-10-16, re-diagnosis of the 2026-10-15 netCDF crash: the prior
+  "HDF5/netCDF library-version mismatch" read was WRONG, refuted directly. A
+  standalone Fortran reader (`nf90_open`/`nf90_inq_varid`/
+  `nf90_inquire_variable`/`nf90_inquire_dimension`/`nf90_get_var`), built from
+  the same activated `eqquasi-petsc` env against the actual
+  `on_fault_vars_input.nc` that crashed EQquasi, reads it correctly both
+  serially and under the identical 6-rank `mpirun --bind-to none --mca btl
+  self,sm --mca pml ob1` launch -- dims (26,11,2) match expectations, no
+  error. The real cause is a `-O3` miscompilation inside EQquasi's own
+  `components/eqquasi/src/netcdf_io.f90:netcdf_read_on_fault`: a bisected
+  "hybrid" rebuild (every other file at the production `-O3`, only
+  `netcdf_io.o` recompiled at `-O0 -g -fbacktrace -fcheck=all` then
+  hand-linked with `make`'s own link line, since `make clean`'s link rule
+  deletes the `.o`s) runs the stepover case cleanly past the netCDF read and
+  1000+ further time steps at full `np=6` speed; the stock all-`-O3` binary
+  crashes with `NetCDF: Invalid dimension ID or name` + SIGSEGV at the same
+  point every time. So the file, the venv writer, and the conda netCDF/HDF5
+  stack are all fine; EQquasi's own `-O3` build of `netcdf_io.f90` is not.
+  Per the 2026-10-12 owner decision ("if the mismatch is upstream, report"),
+  this is BLOCKED(upstream: EQquasi), not an EQsimu or host-env bug -- EQsimu
+  owns no solver code. Reproduction recipe for the upstream report: pin
+  `524a5236`, `eqquasi-petsc` env, compile `netcdf_io.f90` at `-O3` vs `-O0
+  -fcheck=all` with everything else held fixed, run `test.stepover.2fault`
+  cycle 0 against `input/on_fault_vars_input.nc`. Root line inside
+  `netcdf_read_on_fault` (383-462) not pinned further this session -- the
+  source already flags implicit-interface character-length risk at the call
+  site (`eqquasi.f90:185-191`) as a related but distinct, already-verified-safe
+  pattern (the one caller there passes a length-50 actual to a length-50
+  dummy). Still open: cycle-1/cycle-2 handover files, `check_handover.py` on
+  all three, caps-application evidence from an actual run -- none reachable
+  until EQquasi fixes or a debug/workaround binary is approved for a real
+  multi-cycle run (not proposed; `-O0 -fcheck=all` measured at ~5.7 s/step,
+  np=6, vs. ~1.8 s/step production -- a full cycle would take hours).
 
 | Priority | Item | Command | Last checked |
 |---|---|---|---|
@@ -132,6 +165,7 @@ Closed 2026-10-15: non-compressive effective normal stress and the caps input
 (`utils/convert.py`'s `COMMON`, was EQquasi-only); rule 8 confirms both codes
 read `C_normal_stress_caps = 1` for every compset
 (`bash rule8.sh <eqquasiroot> <eqdynaroot> <out>`).
+| P1 | stepover fdc rerun (`test.stepover.2fault`, pins EQquasi `524a5236`/EQdyna `29774c3`): BLOCKED(upstream: EQquasi) -- `netcdf_io.f90:netcdf_read_on_fault` crashes (`NetCDF: Invalid dimension ID or name` + SIGSEGV) only when that file is compiled at the production `-O3`; isolated via hybrid-build bisection, not a file/library/env issue (see 2026-10-16 entry above for the full recipe) | `MACHINE=conda-linux make FFLAGS="-fopenmp -ffree-line-length-none -O0 -g -fbacktrace -fcheck=all"` on `netcdf_io.f90` only, rerun case | 2026-10-16 |
 | P1 | fdc on ls6 never run; locally `bp1001.fdc.rough.1000` ran two cycles for real (rerun 2026-10-13 with `fric_pc_L = Dc`) (`eqquasi-petsc` env, EQquasi `eqquasi-1.21.2` = pin source, EQdyna built at the pin): each EQquasi phase ended by handing over to EQdyna, and cycle 2's EQquasi started at peak slip rate 4.65613e-3 m/s, equal to the maximum in cycle 1's `fault.dyna.r.nc`. BLOCKED(owner): ls6 needs an MFA session ("Later") | `create.newcase fdc t bp1001.fdc.rough.1000 --machine ls6 && cd t && ./case.setup && ./case.submit` | 2026-10-13 |
 | P2 | Normal-stress state-law length L: EQsimu's `utils/convert.py` still sets EQquasi's `fric_pc_L = Dc` explicitly (PR #22 workaround; EQquasi's own default, 0.0, means "no state," unlike EQdyna's). EQdyna pin `29774c3` now takes `par.fric_pc_L` too (`None` default = per-node Dc, same value as EQquasi's override, so the two codes already agree in effect; verified bitwise-equal L is not). rule 8 (2026-10-15) shows `eqquasi fric_pc_L=0.14` (=Dc) and `eqdyna fric_pc_L=None` for every compset, the same L by construction (`_check_uniform_dc`). Left open upstream: EQdyna's explicit theta_pc update vs EQquasi's exponential one | `bash rule8.sh <eqquasiroot> <eqdynaroot> <out>` | 2026-10-15 |
 | P2 | Pins in `components.txt` are recent heads (EQquasi 2026-10-09, EQdyna `29774c3` 2026-10-15), not the versions behind Liu et al. (2020): EQquasi's nearest-to-2020-12-31 commit is `66958e3` (2020-10-08), EQdyna's is `0381248` (2020-10-07) | `git -C components/eqquasi log --until=2020-12-31 -1` | 2026-10-15 |
