@@ -154,6 +154,10 @@
   until EQquasi fixes or a debug/workaround binary is approved for a real
   multi-cycle run (not proposed; `-O0 -fcheck=all` measured at ~5.7 s/step,
   np=6, vs. ~1.8 s/step production -- a full cycle would take hours).
+- 2026-10-16, on the EQquasi `-O3` `netcdf_read_on_fault` crash (asked: (1)
+  file the EQquasi upstream report, after pinning the failing line and
+  compiler versions; (2) run the stepover locally with only that file at
+  `-O0`): **"1"**.
 
 | Priority | Item | Command | Last checked |
 |---|---|---|---|
