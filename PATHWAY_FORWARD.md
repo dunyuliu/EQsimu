@@ -75,6 +75,10 @@
   locally past the cycle-2 handover once the EQdyna pin moves, the 2026-10-12
   run having stopped mid cycle-2 EQquasi with the case since deleted; (4) the
   handover check not yet run on a stepover): **"1 go"**.
+- 2026-10-15, same question, (2) the caps mismatch on the stepover (EQquasi
+  caps on; EQdyna at `42ce254` capped only non-planar faults): **"2, you open
+  it"**. Read as: caps on in both codes for the stepover; landed with the pin
+  bump (PR #37, `C_normal_stress_caps = 1` shared).
 
 | Priority | Item | Command | Last checked |
 |---|---|---|---|
