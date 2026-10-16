@@ -33,6 +33,10 @@ par.zmin_trans = -25e3
 par.ymin_trans, par.ymax_trans = -5e3, 5e3
 par.dx_trans = 50
 
+# Both codes read this identically (EQdyna pin >= 29774c3; owner 2026-10-13
+# "2b": caps on, report upstream -- https://github.com/EQDYNA/EQdyna/issues/200).
+par.C_normal_stress_caps = 1
+
 
 def shear_steady_state(p, a, b, v0, r0, load_rate, norm, slip_rate):
     return (-norm*a*asinh(slip_rate/2.0/v0*exp((r0 + b*log(v0/load_rate))/a))
@@ -86,7 +90,6 @@ par.eqquasi = dict(
                        [0, 32, 0], [0, 32, -10], [0, 48, 0], [16, 8, 0],
                        [-16, 8, 0]],
     az_op=2, az_maxiter=2000, az_tol=1.0e-7,
-    C_normal_stress_caps=1,
 )
 
 par.eqdyna = dict(
