@@ -60,6 +60,12 @@
   and get updated quicker"**, **"Releases more often"**, **"A branch stayed
   finite"**. Read as: PRs to `main`, short-lived branches, a release per
   landed surface.
+- 2026-10-15, on moving the EQdyna pin past `42ce254` (asked: move it to
+  `46ee862`, which fixed EQdyna #189/#200/#201, via a `components.txt` bump,
+  rule-8 check, `convert.py` passing the same `fric_pc_L` and caps to both
+  codes, board update and release): **"upstream updated and you can move
+  forward?"**, then **"/autopilot march on"**. Read as: go, to the current
+  EQdyna head.
 
 | Priority | Item | Command | Last checked |
 |---|---|---|---|
