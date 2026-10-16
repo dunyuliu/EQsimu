@@ -157,17 +157,9 @@
 
 | Priority | Item | Command | Last checked |
 |---|---|---|---|
-Closed 2026-10-15: non-compressive effective normal stress and the caps input
-(prior P1/P2 rows). EQdyna pin moved past `42ce254` to `29774c3` (PR #210,
-`46ee862`+): EQdyna now stops on `sigma_bar >= 0`
-(`stopNonCompressiveNormal`, `src/fortran/faulting.f90:247`), like EQquasi's
-`check_effective_normal`/`STOP 508`. `C_normal_stress_caps` is now shared
-(`utils/convert.py`'s `COMMON`, was EQquasi-only); rule 8 confirms both codes
-read `C_normal_stress_caps = 1` for every compset
-(`bash rule8.sh <eqquasiroot> <eqdynaroot> <out>`).
 | P1 | stepover fdc rerun (`test.stepover.2fault`, pins EQquasi `524a5236`/EQdyna `29774c3`): BLOCKED(upstream: EQquasi) -- `netcdf_io.f90:netcdf_read_on_fault` crashes (`NetCDF: Invalid dimension ID or name` + SIGSEGV) only when that file is compiled at the production `-O3`; isolated via hybrid-build bisection, not a file/library/env issue (see 2026-10-16 entry above for the full recipe) | `MACHINE=conda-linux make FFLAGS="-fopenmp -ffree-line-length-none -O0 -g -fbacktrace -fcheck=all"` on `netcdf_io.f90` only, rerun case | 2026-10-16 |
 | P1 | fdc on ls6 never run; locally `bp1001.fdc.rough.1000` ran two cycles for real (rerun 2026-10-13 with `fric_pc_L = Dc`) (`eqquasi-petsc` env, EQquasi `eqquasi-1.21.2` = pin source, EQdyna built at the pin): each EQquasi phase ended by handing over to EQdyna, and cycle 2's EQquasi started at peak slip rate 4.65613e-3 m/s, equal to the maximum in cycle 1's `fault.dyna.r.nc`. BLOCKED(owner): ls6 needs an MFA session ("Later") | `create.newcase fdc t bp1001.fdc.rough.1000 --machine ls6 && cd t && ./case.setup && ./case.submit` | 2026-10-13 |
-| P2 | Normal-stress state-law length L: EQsimu's `utils/convert.py` still sets EQquasi's `fric_pc_L = Dc` explicitly (PR #22 workaround; EQquasi's own default, 0.0, means "no state," unlike EQdyna's). EQdyna pin `29774c3` now takes `par.fric_pc_L` too (`None` default = per-node Dc, same value as EQquasi's override, so the two codes already agree in effect; verified bitwise-equal L is not). rule 8 (2026-10-15) shows `eqquasi fric_pc_L=0.14` (=Dc) and `eqdyna fric_pc_L=None` for every compset, the same L by construction (`_check_uniform_dc`). Left open upstream: EQdyna's explicit theta_pc update vs EQquasi's exponential one | `bash rule8.sh <eqquasiroot> <eqdynaroot> <out>` | 2026-10-15 |
+| P2 | Normal-stress state-law length L: both codes now get the same explicit `par.fric_pc_L = par.fric_rsf_Dc` from `utils/convert.py` (PR #41; EQdyna takes it since pin `29774c3`, EQdyna PR #210); `_check_uniform_dc` still guards a non-uniform Dc. Left open upstream: EQdyna updates theta_pc explicitly for L > 0, EQquasi exponentially | rule 8 recipe (`PROJECT_RULES.md` rule 8), then `grep fric_pc_L <out>/*/*/user_defined_params.py` | 2026-10-16 |
 | P2 | Pins in `components.txt` are recent heads (EQquasi 2026-10-09, EQdyna `29774c3` 2026-10-15), not the versions behind Liu et al. (2020): EQquasi's nearest-to-2020-12-31 commit is `66958e3` (2020-10-08), EQdyna's is `0381248` (2020-10-07) | `git -C components/eqquasi log --until=2020-12-31 -1` | 2026-10-15 |
 | P3 | The 1 km low-pass (`roughness.resample`, Gaussian, 2 km cutoff) still passes about 37% amplitude at 2 km, the Nyquist wavelength of the 1 km grid; sharpen only if the owner asks | `grep -n "def resample" -A30 utils/roughness.py` | 2026-10-10 |
 | P3 | EQdyna's own `case_input/bp1001.fdc.rough.250` is in the flat pre-`par` format its `case.setup` no longer imports (0 matches for `par = parameters` in the pinned `42ce254` copy); report to EQdyna | `grep -c 'par = parameters' components/eqdyna/case_input/bp1001.fdc.rough.250/user_defined_params.py` | 2026-10-12 |
