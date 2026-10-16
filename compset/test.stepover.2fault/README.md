@@ -65,3 +65,43 @@ build-environment issue on this host, not an EQsimu bug (rule 3: EQsimu
 never patches a checked-out component), so no source under `components/`
 was touched, and no case directory, handover file, or caps evidence exists
 from this attempt.
+
+2026-10-15, second rerun attempt, same pins, fixing the MUMPS build by
+calling EQquasi's own `-m conda-linux` install mode directly (not through
+`checkout.sh -i local`, which cannot express a per-component mode):
+`cd components/eqquasi && bash install.eqquasi.sh -m conda-linux` with
+`eqquasi-petsc` active -- built in 5 s, no private MUMPS, linking the conda
+env's `dmumps`/`lapack`/`scalapack`/`netcdf` directly
+(`bin/eqquasi-1.21.2`). `EQDYNAROOT` pointed at a prebuilt EQdyna binary
+already at the pin (`29774c3`), `EQQUASIROOT` at the fresh build; `PATH`
+assembled to match `source checkout.sh`'s exports plus a `venv` ahead of it
+for `scipy`/`netCDF4` (`create.newcase`'s `roughness.py` needs `scipy`,
+absent from both conda envs on this host). `create.newcase fdc stepover2f
+test.stepover.2fault --machine local` then `./case.setup` both succeeded
+(case dirs for both codes fully populated; `case.setup` printed `normal-stress
+caps ON: min_norm -10 MPa, max_norm -40 MPa`, confirming the PR #37/#40
+setting is live in this case). `create.newcase` itself still exits 1 after
+writing both case dirs -- `record()`'s `git -C $EQSIMUROOT rev-parse HEAD`
+fails because this scratch copy of the EQsimu tree has no `.git` (an
+artifact of the scratch area, not of the checked-in repo); cosmetic, both
+case directories are complete regardless.
+
+`./case.submit` then BLOCKED in cycle 0, before any rupture/handover:
+EQquasi's first MPI rank fails reading `input/on_fault_vars_input.nc` --
+`netCDF error: NetCDF: Invalid dimension ID or name while handling:
+input/on_fault_vars_input.nc` -- immediately followed by a SIGSEGV in
+another rank and `eqquasi exited 1 in cycle 0`. The file is
+NETCDF4/HDF5 (`python3 -c 'import netCDF4; print(netCDF4.__version__)'`
+-> 1.7.2, `file_format` `NETCDF4`, dimensions `fault`/`dip`/`strike`),
+written by the `venv` Python's `netCDF4` package used for `create.newcase`;
+EQquasi's Fortran netcdf reader is linked against the `eqquasi-petsc` conda
+env's `netcdf-fortran`/`netcdf-c`/HDF5. This is a genuinely different
+failure from the 2026-10-12 run (which read the same kind of file and ran
+24,000+ clean steps) -- most likely an HDF5/netCDF library-version mismatch
+between the `venv` that wrote the file and the conda env that reads it on
+this specific host, not a build-flag issue and not something rule 3 permits
+patching inside `components/eqquasi`. Not chased further (budget spent on
+the build fix); no cycle-1 `fault.r.nc`, no cycle-1 `fault.dyna.r.nc`, no
+cycle-2 handover, and no `check_handover.py`/caps-application evidence exist
+from this attempt beyond the static `case.setup` confirmation above that
+caps are configured ON.
