@@ -241,15 +241,21 @@ def render(par, funcs, code, source):
              "par = parameters()"]
     lines += [f"par.{k} = {_lit(v, k)}" for k, v in _settings(par, code, known)]
     lines += ["par.dy = par.dx", "par.dz = par.dx"]
-    if code == "eqquasi":
-        # EQdyna hardwires its normal-stress state-law L to the per-node Dc
-        # (faulting.f90, no input); EQquasi's own fric_pc_L defaults to 0.0,
-        # which read an EQdyna restart as inconsistent state (STOP 508).
-        # 2026-10-12 owner decision: same input, same model setup on the
-        # fault. This is a deliberate exception to CLAUDE.md's "EQquasi
-        # output must match that code's own compset par exactly" check:
-        # EQquasi's own bp1001 compset leaves fric_pc_L at its 0.0 default,
-        # so this output now differs from it on that one field.
+    if code in ("eqquasi", "eqdyna"):
+        # EQquasi's own fric_pc_L defaults to 0.0 ("no state"), which read an
+        # EQdyna restart as inconsistent state (STOP 508). EQdyna's own
+        # default (par.fric_pc_L = None, pin >= 29774c3, EQdyna PR #210) is
+        # "L is each node's Dc" -- equal to this scalar only while the fault
+        # is uniform (_check_uniform_dc), not the same input. 2026-10-12
+        # owner decision: same input, same model setup on the fault; the
+        # 2026-10-15 "fric_pc_L already effectively shared" board note
+        # relied on that coincidence instead. Write the identical scalar
+        # fric_rsf_Dc to both codes explicitly, so the generated par's are
+        # the same input, not just numerically equal under a side condition.
+        # Deliberate exception to CLAUDE.md's "EQquasi output must match
+        # that code's own compset par exactly" check: EQquasi's own bp1001
+        # compset leaves fric_pc_L at its 0.0 default, so this output now
+        # differs from it on that one field.
         _check_uniform_dc(par)
         lines.append("par.fric_pc_L = par.fric_rsf_Dc")
     if code == "eqdyna":
