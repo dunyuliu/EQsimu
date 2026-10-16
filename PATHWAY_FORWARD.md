@@ -79,6 +79,28 @@
   caps on; EQdyna at `42ce254` capped only non-planar faults): **"2, you open
   it"**. Read as: caps on in both codes for the stepover; landed with the pin
   bump (PR #37, `C_normal_stress_caps = 1` shared).
+- 2026-10-15, stepover-fdc-rerun attempt (mission "wei-lin" stepover rerun):
+  the rerun at the current pins (EQquasi `524a5236`, EQdyna `29774c3`)
+  BLOCKED in the build step, before any case existed -- `./checkout.sh -i
+  local` (`eqquasi-petsc` conda env active) fails building EQquasi's
+  private MUMPS: on this host, MUMPS's CMake `find_package(MPI)` picks the
+  system OpenMPI 3.1 (`/usr/lib/x86_64-linux-gnu/openmpi`) over the conda
+  env's, and errors `Could NOT find MPI (missing: MPI_Fortran_FOUND
+  Fortran)`, so `mumps/build/local/include/dmumps_struc.h` never exists and
+  EQquasi's own `make` then fails on `solveTimeLoopMUMPS.f90` with `Fatal
+  Error: Cannot open included file 'dmumps_struc.h'`. A retry exporting
+  `CC`/`FC`/`CXX`/`MPI_HOME`/`CMAKE_PREFIX_PATH` to the conda env's MPI
+  wrappers before `install.mumps.sh`: got CMake's `find_package(MPI)` to
+  pick the conda env (`Found MPI_C`/`Found MPI_Fortran` ->
+  `$CONDA_PREFIX/bin/mpicc`/`mpif90`), but MUMPS's CMake then fails on
+  `Could NOT find LAPACK (missing: LAPACK_LIBRARIES)`
+  (`cmake/FindLAPACK.cmake:489`) -- a second, different build-environment
+  failure -- so `dmumps_struc.h` still never exists and EQquasi's build
+  still fails the same way. Not retried a third time. No handover files
+  were produced, so `check_handover.py` and
+  the normal-stress-caps evidence are still open (see the two rows below).
+  See `compset/test.stepover.2fault/README.md`'s Results section for the
+  full command/error transcript.
 
 | Priority | Item | Command | Last checked |
 |---|---|---|---|
