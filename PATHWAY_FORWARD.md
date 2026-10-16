@@ -71,6 +71,10 @@
   both codes get the same value (was EQquasi-only), rule 8 green for all 3
   compsets x both codes. `fric_pc_L` was already effectively shared (see P2
   row); no further convert.py change needed there.
+- 2026-10-15, on the stepover fdc (asked: (1) rerun `test.stepover.2fault`
+  locally past the cycle-2 handover once the EQdyna pin moves, the 2026-10-12
+  run having stopped mid cycle-2 EQquasi with the case since deleted; (4) the
+  handover check not yet run on a stepover): **"1 go"**.
 
 | Priority | Item | Command | Last checked |
 |---|---|---|---|
