@@ -158,6 +158,9 @@
   file the EQquasi upstream report, after pinning the failing line and
   compiler versions; (2) run the stepover locally with only that file at
   `-O0`): **"1"**.
+- 2026-10-18, on running `test.stepover.2fault` fdc with EQquasi built at
+  `-O2` (a compile flag only, no source change) while EQquasi #65 is open:
+  **"Then why not try your self? Get a EQquasi copy and change flag"**.
 - 2026-10-16, next workable row (`liu2020 compsets`, both P1s staying
   BLOCKED): landed `liu2020.fdc.planar.300` and `liu2020.fdc.rough.250` as
   EQsimu compsets (PR #49), reconciling EQdyna's and EQquasi's existing
