@@ -34,9 +34,10 @@ rebuild (2026-10-12): cycle 2's EQquasi ran clean past 24,000+ steps / 350+
 simulated years with no STOP/NaN/netCDF error. That case directory was
 later deleted before cycle 2 handed over to EQdyna.
 
-Cycle 1 at the current pins (EQquasi `524a5236`, EQdyna `29774c3`) is
-blocked upstream: EQquasi built at `-O3` fails reading this case's two-fault
-`input/on_fault_vars_input.nc` ("NetCDF: Invalid dimension ID or name", then
-SIGSEGV), while `-O2` builds run clean. Reported as
-https://github.com/dunyuliu/EQquasi/issues/65; details and the attempt
-history are in `PATHWAY_FORWARD.md`.
+Two full cycles at the current pins (EQquasi `524a5236`, EQdyna `29774c3`),
+local, 2026-10-18: all four handover files pass `check_handover.py`, with
+normal-stress caps on. Cycle 1 ruptures at 58 years. Cycle 2's EQquasi ran
+its full 30,000 steps (460 years, peak slip rate 0.02 m/s) without a second
+rupture; that is open on the board. EQquasi must be built from a clean tree:
+objects left by a failed build crashed the netCDF read (EQquasi #65, fixed
+upstream in PR #67).
