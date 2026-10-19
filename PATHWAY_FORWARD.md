@@ -164,6 +164,13 @@
 - 2026-10-19, on cycle 2 of `test.stepover.2fault` ending at EQquasi's
   hardcoded 30000-step fdc limit without a rupture (asked: is it physical;
   should the chain break): **"Should continue EQquasi"**, **"Until next rpt"**.
+- 2026-10-19, on tagging v0.2.0 on main (20 commits since v0.1.1; no CI, so
+  the gate is a stranger clone plus the create.newcase/case.setup checks):
+  **"Tag v0.2.0 now (Recommended)"**.
+- 2026-10-19, on EQquasi 1.21.3+ refusing EQdyna's restart for lacking a
+  `dip_node_spacing` attribute (blocks the pin move): **"EQdyna stamps it
+  (Recommended)"** -- an upstream EQdyna PR writes its dz there; EQquasi's
+  check stays strict.
 - 2026-10-16, next workable row (`liu2020 compsets`, both P1s staying
   BLOCKED): landed `liu2020.fdc.planar.300` and `liu2020.fdc.rough.250` as
   EQsimu compsets (PR #49), reconciling EQdyna's and EQquasi's existing
