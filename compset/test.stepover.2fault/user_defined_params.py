@@ -102,6 +102,10 @@ par.eqquasi = dict(
     minDc=0.13,
     far_vel_load=4e-10,
     exit_slip_rate=0.2,
+    # Owner decision 2026-10-19: run until the next rupture. EQquasi >=
+    # 1.21.4 takes this as mode 2's step cap (older ones fix it at 30000);
+    # cycle 2 did not rupture within 30000 steps (460 yr).
+    nstep=200000,
     fric_sw_fs=0, fric_sw_fd=0, fric_sw_D0=0,
     HPC_nnode=1, HPC_ncpu=2, HPC_queue="normal", HPC_time="00:30:00",
     HPC_account="EAR22013",

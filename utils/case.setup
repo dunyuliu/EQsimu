@@ -78,6 +78,12 @@ if [ "$CYCLE" -gt 1 ]; then
 fi
 cd eqquasi && CYCLE=$CYCLE RESTART_DIR=restart bash run.cycle.sh
 test -e "result/cycle$k/fault.r.nc"
+# PATHWAY_FORWARD.md owner decision 2026-10-19: EQquasi continues until the
+# next rupture. A phase that ended on nstep instead (exit_reason
+# nstep_reached) is not a rupture; stop here rather than hand it to EQdyna.
+python3 -c 'import json, sys
+r = json.load(open(sys.argv[1]))["exit_reason"]
+sys.exit(0 if r == "stoptag" else "EQquasi cycle %s ended on %s, not a rupture: raise par.eqquasi nstep" % (sys.argv[2], r))' "result/cycle$k/runInfo.json" "$CYCLE"
 """
 
 EQDYNA_BODY = """\
