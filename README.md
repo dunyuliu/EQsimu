@@ -50,6 +50,8 @@ problem from `eqsimu/compset/`.
 |---|---|
 | [`bp1001.fdc.rough.250`](compset/bp1001.fdc.rough.250/README.md) | SEAS BP1001, rough fault, 250 m |
 | [`bp1001.fdc.rough.1000`](compset/bp1001.fdc.rough.1000/README.md) | the same problem at 1 km, for a local run |
+| [`liu2020.fdc.planar.300`](compset/liu2020.fdc.planar.300/README.md) | Liu et al. (2020) cycle, planar fault, 300 m |
+| [`liu2020.fdc.rough.250`](compset/liu2020.fdc.rough.250/README.md) | Liu et al. (2020) cycle, rough fault, 250 m |
 | [`test.stepover.2fault`](compset/test.stepover.2fault/README.md) | planar two-fault stepover, tests the multi-fault conversion |
 
 A new problem is a folder in `compset/` with a `user_defined_params.py`
