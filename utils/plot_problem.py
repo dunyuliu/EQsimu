@@ -6,7 +6,7 @@ Draw the problem a compset defines (setup.png in COMPSET_DIR): the fault
 plane coloured by a - b with the transfer box, the fault-roughness heights
 on the fault grid (utils/roughness.py), and the a, b and initial shear stress at x = 0.
 
-Multi-fault (par.ntotft > 1, par.faultgeom set -- PATHWAY_FORWARD.md board P3):
+Multi-fault (par.ntotft > 1, par.faultgeom set):
 each fault gets its own (fx, fz) grid from its own par.faultgeom[ift] box and
 its own par.fault(par, x, z, ift) call (convert.py's own multi-fault
 convention; par.roughness is always None here -- convert.py refuses

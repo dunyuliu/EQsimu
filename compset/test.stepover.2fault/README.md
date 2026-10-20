@@ -18,7 +18,8 @@ The fdc settings (`exit_slip_rate`, `xi`, `C_normal_stress_caps`, `term`,
 
 ## Results
 
-Run locally with the pinned codes (`--machine local`, 2026-10-11). Cycle 1
+Run locally with the pins of the time (EQquasi `524a5236`, EQdyna `29774c3`;
+`--machine local`, 2026-10-11). Cycle 1
 works: EQquasi reaches rupture on fault 1 after about 56 years, EQdyna runs
 it to 150 s and hands back at peak slip rate 6.7e-4 m/s.
 
