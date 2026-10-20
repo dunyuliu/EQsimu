@@ -1,5 +1,5 @@
 # Pinned component commits. checkout.sh checks out exactly these.
 # To move a pin: change the commit here, rerun ./checkout.sh -u <mach>.
 # name     repository                                commit
-eqquasi    https://github.com/dunyuliu/EQquasi.git   524a5236b411c38fa216cff97bc6949bd83721e1
-eqdyna     https://github.com/dunyuliu/EQdyna.git    29774c3b02b314fe2cdd2691a3a72849200ca8c9
+eqquasi    https://github.com/dunyuliu/EQquasi.git   71f373ea899abafab10d625ffe625a9449121856
+eqdyna     https://github.com/dunyuliu/EQdyna.git    15346fc337c6380a0f1f731da2d963916de572d3
