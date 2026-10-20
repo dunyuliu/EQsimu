@@ -178,6 +178,12 @@
   published once the release gate passes on the exact SHA (fresh clone under
   `env -i`: `create.newcase fdc` + `case.setup` on every fdc compset,
   `utils/test_check_handover.py`, rule 8); a major bump still asks.
+- 2026-10-20, same question, after v0.2.1 was tagged on the gate alone:
+  **"follow wei lin's protocal"**. Read as: an unasked release runs the
+  conductor's milestone cycle (rules audit and code audit, fixes by each
+  surface's owner, a refactor scoped to the findings, then the release
+  specialist), not the gate alone. v0.2.1 gets that audit after the fact;
+  its fixes land in v0.2.2, and the tag is never moved.
 - 2026-10-16, next workable row (`liu2020 compsets`, both P1s staying
   BLOCKED): landed `liu2020.fdc.planar.300` and `liu2020.fdc.rough.250` as
   EQsimu compsets (PR #49), reconciling EQdyna's and EQquasi's existing
