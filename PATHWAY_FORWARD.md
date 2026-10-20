@@ -79,7 +79,7 @@
   caps on; EQdyna at `42ce254` capped only non-planar faults): **"2, you open
   it"**. Read as: caps on in both codes for the stepover; landed with the pin
   bump (PR #37, `C_normal_stress_caps = 1` shared).
-- 2026-10-15, stepover-fdc-rerun attempt (mission "wei-lin" stepover rerun):
+- 2026-10-15, stepover-fdc-rerun attempt (conductor mission, stepover rerun):
   the rerun at the current pins (EQquasi `524a5236`, EQdyna `29774c3`)
   BLOCKED in the build step, before any case existed -- `./checkout.sh -i
   local` (`eqquasi-petsc` conda env active) fails building EQquasi's
@@ -179,7 +179,7 @@
   `env -i`: `create.newcase fdc` + `case.setup` on every fdc compset,
   `utils/test_check_handover.py`, rule 8); a major bump still asks.
 - 2026-10-20, same question, after v0.2.1 was tagged on the gate alone:
-  **"follow wei lin's protocal"**. Read as: an unasked release runs the
+  [paraphrased: agent name removed] **follow the conductor's protocol**. Read as: an unasked release runs the
   conductor's milestone cycle (rules audit and code audit, fixes by each
   surface's owner, a refactor scoped to the findings, then the release
   specialist), not the gate alone. v0.2.1 gets that audit after the fact;
