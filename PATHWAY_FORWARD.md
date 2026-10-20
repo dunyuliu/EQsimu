@@ -200,7 +200,7 @@
   real stale `components/eqquasi` checkout on this host, passes against the
   pinned builds), plus the 4 doc fixes. No refactor dispatched: the fix
   itself is one small, isolated function with no duplication or complexity
-  for `kai-fischer` to simplify. Gate at the pins (EQquasi `71f373e`, EQdyna
+  for the refactor step to simplify. Gate at the pins (EQquasi `71f373e`, EQdyna
   `15346fc`), fresh worktree: 5/5 fdc compsets (`create.newcase`+
   `case.setup`), rule 8 10/10, `test_check_handover.py` PASS.
 - 2026-10-16, next workable row (`liu2020 compsets`, both P1s staying
