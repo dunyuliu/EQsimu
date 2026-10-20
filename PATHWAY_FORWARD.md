@@ -173,6 +173,11 @@
   check stays strict.
 - 2026-10-20, on cutting a release for the pin move to EQquasi `71f373e` /
   EQdyna `15346fc` (PR #60): **"Tag v0.2.1 now (Recommended)"**.
+- 2026-10-20, on whether EQsimu tags and releases without asking: **"All
+  non-major auto"**. Read as: a patch or minor release is tagged and
+  published once the release gate passes on the exact SHA (fresh clone under
+  `env -i`: `create.newcase fdc` + `case.setup` on every fdc compset,
+  `utils/test_check_handover.py`, rule 8); a major bump still asks.
 - 2026-10-16, next workable row (`liu2020 compsets`, both P1s staying
   BLOCKED): landed `liu2020.fdc.planar.300` and `liu2020.fdc.rough.250` as
   EQsimu compsets (PR #49), reconciling EQdyna's and EQquasi's existing
