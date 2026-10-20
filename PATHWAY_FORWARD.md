@@ -171,6 +171,8 @@
   `dip_node_spacing` attribute (blocks the pin move): **"EQdyna stamps it
   (Recommended)"** -- an upstream EQdyna PR writes its dz there; EQquasi's
   check stays strict.
+- 2026-10-20, on cutting a release for the pin move to EQquasi `71f373e` /
+  EQdyna `15346fc` (PR #60): **"Tag v0.2.1 now (Recommended)"**.
 - 2026-10-16, next workable row (`liu2020 compsets`, both P1s staying
   BLOCKED): landed `liu2020.fdc.planar.300` and `liu2020.fdc.rough.250` as
   EQsimu compsets (PR #49), reconciling EQdyna's and EQquasi's existing
