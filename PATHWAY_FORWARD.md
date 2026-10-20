@@ -184,6 +184,25 @@
   surface's owner, a refactor scoped to the findings, then the release
   specialist), not the gate alone. v0.2.1 gets that audit after the fact;
   its fixes land in v0.2.2, and the tag is never moved.
+- 2026-10-20, v0.2.1 post-hoc milestone audit (owner decision above), run on
+  current main (a14f11f), v0.2.1 tag untouched: rules audit (no Critical/
+  Major; 3 Minor -- a stale PATHWAY_FORWARD.md P3 cross-reference in
+  `plot_problem.py:9`, and the two "Minor documentation gaps" v0.2.0's own
+  release notes referenced but never named, re-derived as `CLAUDE.md`'s file
+  inventory omitting `utils/check_handover.py`) and a technical audit (1
+  Major: `create.newcase` staged a case from whatever EQquasi/EQdyna
+  checkout was active without checking it against `components.txt`'s pin --
+  a stale checkout ran silently under a case whose own recorded
+  `components.txt` looked fine; 2 more Minor doc-staleness findings; 1
+  advisory each on rule 9 tooling and EQdyna's pin being untagged upstream).
+  Fixed in PR #64 (`0a507ff`): `check_pins()` added to `utils/create.newcase`
+  (fails loudly on a pin mismatch; verified both ways -- fails against the
+  real stale `components/eqquasi` checkout on this host, passes against the
+  pinned builds), plus the 4 doc fixes. No refactor dispatched: the fix
+  itself is one small, isolated function with no duplication or complexity
+  for `kai-fischer` to simplify. Gate at the pins (EQquasi `71f373e`, EQdyna
+  `15346fc`), fresh worktree: 5/5 fdc compsets (`create.newcase`+
+  `case.setup`), rule 8 10/10, `test_check_handover.py` PASS.
 - 2026-10-16, next workable row (`liu2020 compsets`, both P1s staying
   BLOCKED): landed `liu2020.fdc.planar.300` and `liu2020.fdc.rough.250` as
   EQsimu compsets (PR #49), reconciling EQdyna's and EQquasi's existing
