@@ -43,6 +43,28 @@ UTILS = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(UTILS)
 
 
+def check_pins(codes):
+    """Fail loudly if a code's checked-out HEAD disagrees with components.txt
+    (rule 4/5): a stale checkout would otherwise stage and run silently under
+    a case whose own recorded components.txt (record(), below) looks fine."""
+    pinned = {}
+    with open(os.path.join(ROOT, "components.txt")) as f:
+        for line in f:
+            line = line.split("#", 1)[0].split()
+            if len(line) == 3 and line[0] in codes:
+                pinned[line[0]] = line[2]
+    for code in codes:
+        root = os.environ[convert.ROOT_ENV[code]]
+        head = subprocess.run(["git", "-C", root, "rev-parse", "HEAD"],
+                              capture_output=True, text=True,
+                              check=True).stdout.strip()
+        if code in pinned and not pinned[code].startswith(head) and \
+                not head.startswith(pinned[code]):
+            sys.exit(f"create.newcase: {code} at {root} is at {head}, but "
+                     f"components.txt pins {code} to {pinned[code]}; rerun "
+                     f"./checkout.sh -u <machine> or fix components.txt")
+
+
 def stage(code, compset_dir, case_dir, gen_dir, machine):
     """Generate code's compset in gen_dir and stage case_dir from it."""
     convert.write_code_compset(compset_dir, code, gen_dir, machine)
@@ -102,6 +124,7 @@ def main():
         sys.exit(__doc__)
     machines.machine(machine)  # raise now, naming the known machines, if unknown
     mode, case_dir, compset = args
+    check_pins(CODES[mode])
     compset_dir = os.path.join(ROOT, "compset", compset)
     if not os.path.isdir(compset_dir):
         sys.exit(f"create.newcase: no EQsimu compset {compset} in "

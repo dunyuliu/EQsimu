@@ -26,8 +26,8 @@ COMMON = ["mode", "fxmin", "fxmax", "fzmin", "fzmax", "dx", "ntotft",
           "dx_trans",
           # Both codes now read this input identically (EQdyna pin >=
           # 29774c3, PR #210): par.C_normal_stress_caps replaces EQdyna's
-          # old insertFaultType>0 && C_elastic==1 rule (par.eqdyna's -1
-          # default keeps that rule for any compset that doesn't set this).
+          # old insertFaultType>0 && C_elastic==1 rule. All EQsimu
+          # compsets set this explicitly; convert.py raises if unset.
           # Rule 7: a parameter both codes read goes in the problem, not a
           # per-code dict.
           "C_normal_stress_caps"]

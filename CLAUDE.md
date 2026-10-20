@@ -13,6 +13,9 @@ EQdyna. It owns no solver code (`PROJECT_RULES.md`).
 - `utils/create.newcase`: convert, then stage with each code's `create.newcase`
 - `utils/case.setup`: the fdc chain, per cycle EQquasi then EQdyna, each via
   its own `run.sh`; EQsimu hands over only `fault.r.nc` / `fault.dyna.r.nc`
+- `utils/check_handover.py`: the handover gate `case.setup` runs at every
+  cycle boundary; breaks the chain on an inconsistent transfer file
+  (owner decision, 2026-10-12)
 - `components.txt`: pinned EQquasi / EQdyna commits; `checkout.sh` uses them
 
 ## Commands
@@ -29,8 +32,9 @@ conda env (owner decision on the board, 2026-10-10).
 ## Checks before changing convert.py
 
 - The EQquasi output must match that code's own compset `par` exactly
-  (bp1001: all attributes and `on_fault_vars` equal; `xcoor` is a loop leftover),
-  except `fric_pc_L`, which EQsimu sets to Dc to match EQdyna (2026-10-12).
+  (bp1001: all attributes and `on_fault_vars` equal; `xcoor`/`zcoor` are loop
+  leftovers), except `fric_pc_L`, which EQsimu sets to Dc to match EQdyna
+  (2026-10-12).
 - `create.newcase fdc` then `./case.setup` must run with the pinned codes.
 - `roughness.fractal_surface` must equal EQdyna's
   `generateFaultInterface:generateFractalSurface` bitwise for the same seed.
