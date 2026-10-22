@@ -184,6 +184,12 @@
   surface's owner, a refactor scoped to the findings, then the release
   specialist), not the gate alone. v0.2.1 gets that audit after the fact;
   its fixes land in v0.2.2, and the tag is never moved.
+- 2026-10-22, on the bp1002.fdc.2500 cycle-7 EQdyna NaN (a deeply locked
+  RSF node from the hand-over; EQdyna's Newton halving, ageing-law
+  cancellation and 0/0 slip direction; asked: file upstream or fix there):
+  **"send the issue to eqdyna"**, **"and let eqdyna handles"**. Filed as
+  EQdyna #232; the fdc run waits for the EQdyna fix and a pin move, and
+  EQsimu patches nothing (rule 3).
 - 2026-10-20, v0.2.1 post-hoc milestone audit (owner decision above), run on
   current main (a14f11f), v0.2.1 tag untouched: rules audit (no Critical/
   Major; 3 Minor -- a stale PATHWAY_FORWARD.md P3 cross-reference in
