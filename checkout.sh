@@ -3,11 +3,14 @@
 # components.txt, build them with their own install scripts, and set the
 # environment.
 #
-#   ./checkout.sh -i <mach>   clone + build into components/   (ls6, ubuntu, ...)
+#   ./checkout.sh -i <mach>   clone + build into components/   (ls6, local, ...)
 #   ./checkout.sh -u <mach>   move existing checkouts to the pins + rebuild
 #   source checkout.sh        set EQSIMUROOT, EQQUASIROOT, EQDYNAROOT, PATH
 #
-# <mach> is passed straight to each component's install script (-m <mach>).
+# <mach> is passed straight to each component's install script (-m <mach>),
+# except local: a workstation building both codes from the conda env at
+# $CONDA_PREFIX (set it, no activation needed). EQquasi builds as conda-linux;
+# EQdyna's installer has no conda target, so its makefile is run directly.
 
 EQSIMUROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 export EQSIMUROOT
@@ -16,7 +19,7 @@ export EQDYNAROOT=$EQSIMUROOT/components/eqdyna
 export PATH=$EQSIMUROOT/utils:$EQQUASIROOT/bin:$EQQUASIROOT/scripts:$EQDYNAROOT/bin:$PATH
 
 usage() {
-    sed -n '2,10p' "$EQSIMUROOT/checkout.sh" | sed 's/^# \{0,1\}//'
+    sed -n '2,13p' "$EQSIMUROOT/checkout.sh" | sed 's/^# \{0,1\}//'
 }
 
 MACH=""
@@ -54,6 +57,16 @@ grep -v '^#' components.txt | while read -r name repo commit; do
     echo "$name at $(git -C "$dir" rev-parse HEAD)"
 done
 
-(cd components/eqquasi && bash install.eqquasi.sh -m "$MACH")
-(cd components/eqdyna  && bash install-eqdyna.sh  -m "$MACH")
+if [ "$MACH" = local ]; then
+    CP=${CONDA_PREFIX:?checkout.sh: local needs CONDA_PREFIX, the conda env to build from}
+    export PATH=$CP/bin:$PATH
+    (cd components/eqquasi && bash install.eqquasi.sh -m conda-linux)
+    (cd components/eqdyna/src/fortran && MACHINE=ubuntu make LIB="$CP/lib" INC="$CP/include" \
+        NETCDF_INC="-I$CP/include" NETCDF_LIB="-L$CP/lib -Wl,-rpath,$CP/lib -lnetcdf -lnetcdff")
+    mkdir -p components/eqdyna/bin
+    mv components/eqdyna/src/fortran/eqdyna components/eqdyna/bin/
+else
+    (cd components/eqquasi && bash install.eqquasi.sh -m "$MACH")
+    (cd components/eqdyna  && bash install-eqdyna.sh  -m "$MACH")
+fi
 echo "EQsimu ready. Run: source checkout.sh"

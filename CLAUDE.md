@@ -21,7 +21,7 @@ EQdyna. It owns no solver code (`PROJECT_RULES.md`).
 ## Commands
 
 ```
-./checkout.sh -i ls6 | -u ls6                   # install / move to pins (bash)
+./checkout.sh -i ls6|local | -u ls6             # install / move to pins (bash)
 source checkout.sh                              # env only
 create.newcase fdc CASE COMPSET --machine ls6   # or qdc / dr; --machine: utils/machines.py
 python3 utils/plot_problem.py compset/<name>    # setup.png for the README
