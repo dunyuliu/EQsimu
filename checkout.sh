@@ -11,15 +11,18 @@
 # except local: a workstation building both codes from the conda env at
 # $CONDA_PREFIX (set it, no activation needed). EQquasi builds as conda-linux;
 # EQdyna's installer has no conda target, so its makefile is run directly.
+# local also makes components/venv (the env's python plus scipy, which only
+# EQsimu's utils/roughness.py needs), so the shared env is left untouched.
 
 EQSIMUROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 export EQSIMUROOT
 export EQQUASIROOT=$EQSIMUROOT/components/eqquasi
 export EQDYNAROOT=$EQSIMUROOT/components/eqdyna
 export PATH=$EQSIMUROOT/utils:$EQQUASIROOT/bin:$EQQUASIROOT/scripts:$EQDYNAROOT/bin:$PATH
+[ -x "$EQSIMUROOT/components/venv/bin/python3" ] && export PATH=$EQSIMUROOT/components/venv/bin:$PATH
 
 usage() {
-    sed -n '2,13p' "$EQSIMUROOT/checkout.sh" | sed 's/^# \{0,1\}//'
+    sed -n '2,15p' "$EQSIMUROOT/checkout.sh" | sed 's/^# \{0,1\}//'
 }
 
 MACH=""
@@ -65,6 +68,8 @@ if [ "$MACH" = local ]; then
         NETCDF_INC="-I$CP/include" NETCDF_LIB="-L$CP/lib -Wl,-rpath,$CP/lib -lnetcdf -lnetcdff")
     mkdir -p components/eqdyna/bin
     mv components/eqdyna/src/fortran/eqdyna components/eqdyna/bin/
+    "$CP/bin/python3" -m venv --system-site-packages components/venv
+    components/venv/bin/pip install -q scipy
 else
     (cd components/eqquasi && bash install.eqquasi.sh -m "$MACH")
     (cd components/eqdyna  && bash install-eqdyna.sh  -m "$MACH")
