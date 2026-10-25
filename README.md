@@ -23,9 +23,9 @@ cd EQsimu
 source checkout.sh          # set EQSIMUROOT, EQQUASIROOT, EQDYNAROOT, PATH
 ```
 `./checkout.sh -u ls6` moves existing checkouts to the pins and rebuilds.
-`<machine>` goes to both codes' own installers, which share only HPC names
-(e.g. `ls6`). On a workstation, build each code with its own installer (see
-its README) and export `EQQUASIROOT`/`EQDYNAROOT` to those checkouts.
+On a workstation, `CONDA_PREFIX=<env> ./checkout.sh -i local` builds both
+codes from a conda env made from EQquasi's `environment.yml` plus `scipy`
+(no activation needed).
 
 ## Run a case
 
