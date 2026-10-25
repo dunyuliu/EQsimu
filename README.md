@@ -24,8 +24,9 @@ source checkout.sh          # set EQSIMUROOT, EQQUASIROOT, EQDYNAROOT, PATH
 ```
 `./checkout.sh -u ls6` moves existing checkouts to the pins and rebuilds.
 On a workstation, `CONDA_PREFIX=<env> ./checkout.sh -i local` builds both
-codes from a conda env made from EQquasi's `environment.yml` plus `scipy`
-(no activation needed).
+codes from a conda env made from EQquasi's `environment.yml` (no activation
+needed), and adds `scipy` in `components/venv`, which `source checkout.sh` puts
+first on `PATH`.
 
 ## Run a case
 
