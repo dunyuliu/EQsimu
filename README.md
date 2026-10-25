@@ -1,6 +1,6 @@
 # EQsimu
 
-Earthquake cycle simulations with EQquasi (quasi-static, interseismic) and
+Earthquake-cycle simulations with EQquasi (quasi-static, interseismic) and
 EQdyna (dynamic rupture), coupled into fully dynamic cycles. Associated with
 Liu et al. (2020).
 
@@ -13,20 +13,30 @@ codes read (`utils/roughness.py`). Each code then runs its own workflow.
 
 ## Install
 
-EQsimu's scripts need Python 3 with `numpy`, `scipy` and `netCDF4`
-(`matplotlib` for `utils/plot_problem.py`).
+Requires Python 3 with `numpy`, `scipy`, and `netCDF4`
+(`matplotlib` additionally for `utils/plot_problem.py`).
 
 ```
+git clone https://github.com/dunyuliu/EQsimu.git
+cd EQsimu
 ./checkout.sh -i ls6        # clone EQquasi + EQdyna at the commits in components.txt, build
 source checkout.sh          # set EQSIMUROOT, EQQUASIROOT, EQDYNAROOT, PATH
 ```
-`./checkout.sh -u ls6` moves existing checkouts to the pinned commits and
-rebuilds. To move a pin, edit `components.txt`.
+`./checkout.sh -u ls6` moves existing checkouts to the pins in
+`components.txt` and rebuilds; `./checkout.sh -i|-u <machine>` works on any
+machine both components' own installers support together (currently `ls6`,
+an HPC cluster). There is no single machine name that builds both components
+on a plain workstation: EQdyna's installer supports `ls6`/`grace`/`ubuntu`/
+`macos`, EQquasi's also offers `conda-linux`, and the two lists don't
+overlap outside `ls6`/HPC. To develop without an HPC account, run each
+component's own installer directly (see EQquasi's and EQdyna's own READMEs)
+and export `EQQUASIROOT`/`EQDYNAROOT` to point at the result before running
+`create.newcase`/`case.setup` below.
 
 ## Run a case
 
 ```
-create.newcase MODE CASE COMPSET
+create.newcase MODE CASE COMPSET --machine MACHINE
 ```
 | MODE | Code | |
 |---|---|---|
@@ -34,15 +44,21 @@ create.newcase MODE CASE COMPSET
 | `dr`  | EQdyna | dynamic rupture |
 | `fdc` | EQquasi + EQdyna | fully dynamic cycle; then `./case.setup && ./case.submit` in CASE |
 
-Each case keeps `eqsimu/` with the problem, the generated files, and the commit
-of EQsimu and of each code.
+`MACHINE` (see `utils/machines.py`) picks the HPC resources (ranks, nodes,
+queue, wall time, account) and, for EQdyna, its process grid; `local` runs
+without a scheduler, directly with `bash`/`mpirun`.
 
-An fdc case runs, per cycle, one EQquasi job and then one EQdyna job, each
-through that code's own `run.sh`. EQsimu passes only the restart files
-(`fault.r.nc` to EQdyna, `fault.dyna.r.nc` back to EQquasi). Results land in
-`eqquasi/result/cycle<k>/` and `eqdyna/result/cycle<k>/`. The cycles run are
-`istart`–`iend` in the case's `user_defined_params.py`, which loads the
-problem from `eqsimu/compset/`.
+Example, a fully dynamic cycle on SEAS benchmark BP1001:
+```
+create.newcase fdc runs/fdc-bp1001 bp1001.fdc.rough.250 --machine local
+cd runs/fdc-bp1001 && ./case.setup && ./case.submit
+```
+`create.newcase` stages `CASE/eqquasi/` and `CASE/eqdyna/`, each a normal
+case of that code, plus `CASE/eqsimu/` recording the problem and the commit
+of EQsimu and of each code. `./case.setup` writes the per-cycle job chain;
+`./case.submit` runs it. Results land in
+`CASE/eqquasi/result/cycle<k>/` and `CASE/eqdyna/result/cycle<k>/`; cycles
+run are `istart`-`iend` in `CASE/user_defined_params.py`.
 
 ## Problems
 
@@ -55,10 +71,18 @@ problem from `eqsimu/compset/`.
 | [`test.stepover.2fault`](compset/test.stepover.2fault/README.md) | planar two-fault stepover, tests the multi-fault conversion |
 
 A new problem is a folder in `compset/` with a `user_defined_params.py`
-(`par = problem()`, see `utils/problemDefaults.py`), its input files, and a
-README with `setup.png` from `utils/plot_problem.py`. Roughness is
-`par.roughness`: `dict(kind="file", path=...)` for a heights file in the
-folder, `dict(kind="resample", path=..., from_dx=..., cutoff=...)` for
-another resolution's heights file (low-passed, then sampled),
-`dict(kind="fractal", hurst=1.0, alpha=0.005, seed=1)` for EQdyna's
-synthetic self-similar surface, or `None` for a planar fault.
+(`par = problem()`, see `utils/problemDefaults.py`) and a README with
+`setup.png` (`python3 utils/plot_problem.py compset/<name>`).
+
+## Citing
+
+Associated with Liu et al. (2020). Please cite that paper when using
+EQsimu, EQquasi, or EQdyna.
+
+## Getting help
+
+Open a GitHub issue: https://github.com/dunyuliu/EQsimu/issues
+
+## License
+
+MIT — see [LICENSE](LICENSE).
