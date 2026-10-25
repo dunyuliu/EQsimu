@@ -22,16 +22,10 @@ cd EQsimu
 ./checkout.sh -i ls6        # clone EQquasi + EQdyna at the commits in components.txt, build
 source checkout.sh          # set EQSIMUROOT, EQQUASIROOT, EQDYNAROOT, PATH
 ```
-`./checkout.sh -u ls6` moves existing checkouts to the pins in
-`components.txt` and rebuilds; `./checkout.sh -i|-u <machine>` works on any
-machine both components' own installers support together (currently `ls6`,
-an HPC cluster). There is no single machine name that builds both components
-on a plain workstation: EQdyna's installer supports `ls6`/`grace`/`ubuntu`/
-`macos`, EQquasi's also offers `conda-linux`, and the two lists don't
-overlap outside `ls6`/HPC. To develop without an HPC account, run each
-component's own installer directly (see EQquasi's and EQdyna's own READMEs)
-and export `EQQUASIROOT`/`EQDYNAROOT` to point at the result before running
-`create.newcase`/`case.setup` below.
+`./checkout.sh -u ls6` moves existing checkouts to the pins and rebuilds.
+`<machine>` goes to both codes' own installers, which share only HPC names
+(e.g. `ls6`). On a workstation, build each code with its own installer (see
+its README) and export `EQQUASIROOT`/`EQDYNAROOT` to those checkouts.
 
 ## Run a case
 
@@ -48,9 +42,10 @@ create.newcase MODE CASE COMPSET --machine MACHINE
 queue, wall time, account) and, for EQdyna, its process grid; `local` runs
 without a scheduler, directly with `bash`/`mpirun`.
 
-Example, a fully dynamic cycle on SEAS benchmark BP1001:
+Example, a fully dynamic cycle on SEAS benchmark BP1001 at 1 km, small enough
+for a workstation:
 ```
-create.newcase fdc runs/fdc-bp1001 bp1001.fdc.rough.250 --machine local
+create.newcase fdc runs/fdc-bp1001 bp1001.fdc.rough.1000 --machine local
 cd runs/fdc-bp1001 && ./case.setup && ./case.submit
 ```
 `create.newcase` stages `CASE/eqquasi/` and `CASE/eqdyna/`, each a normal
